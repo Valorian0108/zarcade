@@ -1,0 +1,116 @@
+[package]
+name = "zarcade-sidecar"
+version = "0.1.0"
+edition = "2021"
+description = "Zarcade's Zcash server helper: holds the house wallet, makes proofs, signs and broadcasts demo transactions on testnet."
+# There is a second binary, `src/bin/probe.rs`, a throwaway diagnostic that
+# identified which of the two live "Zcash testnet" chains is canonical (D-027).
+# Without this line `cargo run` refuses to guess between them, and the documented
+# startup command in README.md would stop working.
+default-run = "zarcade-sidecar"
+
+# Debug symbols off: this machine has <10GB free disk and the Zcash crypto
+# stack with full debuginfo can exceed that. We do not need symbols for a
+# local demo sidecar; this typically halves the build tree size.
+[profile.dev]
+debug = 0
+
+# Proving is heavy cryptography, and unoptimized it measured 72 seconds for a
+# single round, which no arcade can ask a player to sit through. Optimizing the
+# dependencies while leaving our own crate unoptimized fixes that and keeps
+# incremental rebuilds of our code at a few seconds.
+#
+# This is preferred over `cargo build --release` here because a release tree
+# would be a second copy of every dependency, and this machine has little free
+# disk. If the sidecar is ever shipped rather than demoed, revisit this and use
+# a real release profile with LTO.
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+secrecy = "0.8"
+# RNG. rand_core 0.10 dropped `OsRng`, and the Zcash 0.25/0.23 crates now bound
+# their RNG parameter by `rand::Rng`. The idiom used inside
+# zcash_client_backend itself is `UnwrapErr(SysRng)`: `rand::rngs::SysRng` is
+# the system entropy source (fallible), and `rand_core::UnwrapErr` adapts it to
+# the infallible `Rng` trait the wallet requires. "sys_rng" is what makes
+# `SysRng` available.
+rand = { version = "0.10", default-features = false, features = ["sys_rng"] }
+rand_core = "0.10"
+hex = "0.4"
+async-trait = "0.1"
+
+# Named directly because our code mentions these types in signatures:
+# rusqlite::Connection (WalletDb type parameter) and tonic::transport::Channel
+# (gRPC client type parameter). Versions match what the Zcash crates use.
+rusqlite = "0.37"
+tonic = { version = "0.14", features = ["transport", "tls-webpki-roots"] }
+
+# tonic's TLS flags pull in rustls but no crypto engine, and rustls refuses to
+# guess one at runtime. We pick "ring" explicitly (ships prebuilt objects for
+# Windows, no extra build tools needed) and install it in main().
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+
+# ZIP-32 account index type used to re-derive the spending key from the seed.
+# 0.3 is what zcash_client_sqlite 0.23 requires, so the types unify.
+zip32 = "0.3"
+
+# ZIP-321 payment requests. Already a transitive dependency of
+# zcash_client_backend at exactly this version (checked in Cargo.lock), so
+# naming it directly downloads nothing new. Needed for the D-031 pot split,
+# which pays the house address many times in one transaction; the backend's
+# `propose_standard_transfer_to_address` helper can only describe one payment.
+zip321 = "=0.10.0-pre.1"
+
+# Named directly only to spell out sqlite's commitment-tree error type in a
+# turbofish (propose_standard_transfer_to_address leaves it unbound).
+# 0.8 is what zcash_client_sqlite 0.23 requires, so the types unify.
+shardtree = "0.8"
+
+# Zcash stack: the NU7-aware pre-release set, pinned exactly (D-028).
+#
+# WHY A PRE-RELEASE. The public testnet activated NU7 at height 4,465,026 on
+# 2026-10-04. The last stable set (backend 0.24 / protocol 0.10.6) predates it
+# and ships NU7 only as a stub: `NetworkUpgrade::Nu7 => None` for every network
+# and `BranchId::Nu7 => 0xffff_ffff` (a placeholder, not the real id). Built
+# against it, the sidecar signs with the NU6.3 branch id and the network
+# rejects the transaction:
+#   code -25 "transaction uses an incorrect consensus branch id"
+# protocol 0.11.0-pre.0 carries the real values, ungated (no zcash_unstable cfg
+# needed): `BranchId::Nu7 => 0x7719_0ad9` and, for testnet only,
+# `NetworkUpgrade::Nu7 => Some(BlockHeight(4_465_026))`. Verified by unpacking
+# the published crate on 2026-10-11.
+#
+# Set verified consistent against crates.io on 2026-10-11 (all published
+# 2026-10-06, after NU7 activation):
+#   backend 0.25.0-pre.1 <-> sqlite 0.23.0-pre.1 <-> protocol 0.11.0-pre.0
+#   <-> primitives 0.31.0-pre.1 <-> proofs 0.31.0-pre.1 <-> keys 0.17.0-pre.1
+# `=` pins are deliberate: cargo does not upgrade across pre-releases, and we
+# want a reproducible build for the judges.
+#
+# Features:
+#  - "lightwalletd-tonic-tls-webpki-roots" + "lightwalletd-tonic-transport":
+#    talk directly (encrypted) to the public testnet lightwalletd, and get the
+#    CompactTxStreamerClient::connect() helper (needs tonic/transport).
+#  - "sync": the backend's built-in wallet-sync state machine (sync::run).
+#  - "transparent-inputs" (both crates): needed for the "glass envelope"
+#    contrast sends to transparent recipients in G1.
+#  - "bundled-prover" (zcash_proofs): Sapling proving parameters embedded in
+#    the binary, so there is no ~51MB runtime download (RESEARCH E, B1 notes).
+zcash_client_backend = { version = "=0.25.0-pre.1", features = ["lightwalletd-tonic-tls-webpki-roots", "lightwalletd-tonic-transport", "sync", "transparent-inputs"] }
+zcash_client_sqlite = { version = "=0.23.0-pre.1", features = ["transparent-inputs"] }
+zcash_protocol = "=0.11.0-pre.0"
+zcash_keys = { version = "=0.17.0-pre.1", features = ["transparent-inputs"] }
+zcash_primitives = "=0.31.0-pre.1"
+zcash_proofs = { version = "=0.31.0-pre.1", features = ["bundled-prover"] }
+
+# Named directly for one thing: the `IncomingViewingKey` trait, whose
+# `default_address()` is how we derive the house's own transparent address
+# (D-030). The convenience helper `default_transparent_address` on the unified
+# key is gated behind `test-dependencies`, so we walk the production path
+# ourselves: USK -> AccountPrivKey -> AccountPubKey -> ExternalIvk -> address.
+zcash_transparent = "=0.11.0-pre.1"
