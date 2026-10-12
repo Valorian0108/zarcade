@@ -295,6 +295,60 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   color: var(--muted);
 }
 
+/* The wait teaches (D-059, lever A). Under the honest seconds count, the
+   real pipeline a payment travels, with exactly one step marked live: the
+   build, because that is what the wallet is truly doing while this screen
+   is up. The later steps are the map, not a claim; the reveal screen narrates
+   the landing with real block numbers as they happen. The live dot's slow
+   pulse is a glow, not a movement, and the global rule stops it under
+   "less". */
+
+.gm-sendTruth {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gm-steps {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.gm-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.gm-step[data-state="live"] {
+  color: var(--ink);
+}
+
+.gm-stepDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.gm-step[data-state="live"] .gm-stepDot {
+  background: var(--gold);
+  border-color: var(--gold);
+  animation: gmStepPulse 3s ease-in-out infinite;
+}
+
+@keyframes gmStepPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(237, 182, 74, 0.3); }
+  50% { box-shadow: 0 0 13px rgba(237, 182, 74, 0.6); }
+}
+
 /* The record of the player's decision, written like a note in the margin of a
    ledger rather than a UI badge: a gold rule, the call in the display face,
    and the key word lit the same way public facts are lit everywhere else. */
@@ -1100,6 +1154,10 @@ html[data-motion="less"] .gm-wMote2 {
 .gm-door {
   display: flex;
   flex-direction: column;
+  /* D-055: the story cycle slides the Watcher toward (and past) a screen
+     edge; clip so that can never produce a horizontal scrollbar. `clip`,
+     not `hidden`, so no scroll container is created. */
+  overflow-x: clip;
 }
 
 .gm-door .gm-banner {
@@ -1146,6 +1204,9 @@ html[data-motion="less"] .gm-wMote2 {
   line-height: 1;
   letter-spacing: 0.14em;
   color: var(--gold);
+  /* D-055: while the Watcher is away and the room is empty, the sign glows
+     a shade softer. Same 40s cycle, same start delay. */
+  animation: gmSignSoft 40s linear 6s infinite;
 }
 
 .gm-doorTitleBase {
@@ -1206,6 +1267,230 @@ html[data-motion="less"] .gm-wMote2 {
   animation: gmRise 0.9s ease 1.25s forwards;
 }
 
+/* ---------- the Watcher's slow ambient life (D-055) ----------
+ * One story on a ~40s cycle, starting 6s after load so the landing
+ * choreography finishes first: he stands idle (his own loops keep him
+ * breathing), a small freestanding door appears beside him, he walks to it
+ * with a bob and steps through, the door closes and fades, an empty beat
+ * follows where the sign glows softer (gmSignSoft above), then the peek: he
+ * slides in from the nearer screen edge until only hood and eye show, holds
+ * the glance, slips away, and fades back at his resting spot.
+ *
+ * Truth anchors (D-042): the watcher can step out of your view; there is a
+ * moment with nobody watching; and the public never really stops watching,
+ * which is the punchline the peek lands. No beat is faster than ~1.4s and
+ * the whole cycle is 40s, well past the door's 4s floor.
+ *
+ * The peek distances (--peekX partial, --peekFull fully offscreen, --peekTilt
+ * the head-turn lean) are measured by one effect in door.tsx against the
+ * resting rect of .gm-wStory. The fallbacks below suit a wide window where
+ * the right edge is nearer. Under "less" motion the global rule stops every
+ * animation at its end state: the Watcher stands at rest, the little door is
+ * invisible, the sign is at full brightness. */
+
+.gm-wStory {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+  --peekX: 400px;
+  --peekFull: 720px;
+  --peekTilt: -4deg;
+  /* D-062: the walk distance and the door's own size are geometry, not
+     guesses. The figure is a fixed 300px wide on this page, his cloak centre
+     sits at 134px, and the door centre follows from its offset, so each
+     breakpoint states its number once and every keyframe reads it. */
+  --walkX: 158px;
+  --doorW: 96px;
+  --doorRight: -40px;
+}
+
+.gm-door .gm-watcher {
+  transform-origin: 50% 92%;
+  animation: gmWatcherStory 40s linear 6s infinite;
+}
+
+/* D-062: a door he can actually use. Tall enough to enter (210px against his
+   348px), a clear gap to the right of the cloak, feet on his ground line, and
+   layered BEHIND him so he walks in front of it and the frame outlives him.
+   Four parts: the frame with its threshold hairline, an inner light that
+   rises as he approaches, a leaf that swings open on its left hinge, and the
+   knob riding on the leaf. */
+
+.gm-wMiniDoor {
+  position: absolute;
+  right: var(--doorRight);
+  bottom: 4px;
+  width: var(--doorW);
+  height: 210px;
+  border: 1px solid rgba(237, 182, 74, 0.45);
+  border-radius: 14px 14px 3px 3px;
+  background: linear-gradient(180deg, #171223 0%, #0d0a14 100%);
+  box-shadow:
+    inset 0 0 24px rgba(8, 6, 12, 0.7),
+    0 0 18px rgba(237, 182, 74, 0.07);
+  opacity: 0;
+  transform: scale(0.86);
+  transform-origin: bottom center;
+  animation: gmMiniDoorStory 40s linear 6s infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* the threshold: the door stands on his floor, not in mid-air */
+.gm-wMiniDoor::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  right: -7px;
+  bottom: -3px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(237, 182, 74, 0.5) 30% 70%,
+    transparent
+  );
+}
+
+.gm-wMiniGlow {
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px 10px 2px 2px;
+  background: radial-gradient(
+    62% 52% at 50% 62%,
+    rgba(255, 207, 110, 0.3),
+    rgba(237, 182, 74, 0.07) 70%,
+    transparent
+  );
+  opacity: 0.15;
+  animation: gmDoorGlow 40s linear 6s infinite;
+}
+
+.gm-wMiniLeaf {
+  position: absolute;
+  inset: 3px;
+  border-radius: 10px 10px 2px 2px;
+  background: linear-gradient(180deg, #1d1830 0%, #120e1d 100%);
+  border: 1px solid rgba(237, 182, 74, 0.28);
+  transform-origin: left center;
+  animation: gmDoorLeaf 40s linear 6s infinite;
+}
+
+.gm-wMiniKnob {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.75;
+}
+
+@keyframes gmWatcherStory {
+  /* idle at rest */
+  0%, 32% { transform: translateX(0); opacity: 1; }
+  36% { transform: translateX(0); opacity: 1; }
+  /* the walk: one lean per step, a small bob, distance from geometry */
+  39% { transform: translate(calc(var(--walkX) * 0.25), -5px) rotate(-1.6deg); opacity: 1; }
+  42% { transform: translate(calc(var(--walkX) * 0.5), 0) rotate(1.6deg); opacity: 1; }
+  45% { transform: translate(calc(var(--walkX) * 0.75), -5px) rotate(-1.6deg); opacity: 1; }
+  48% { transform: translate(var(--walkX), 0) rotate(0deg); opacity: 1; }
+  /* through the open leaf: he shrinks to fit the doorway and is gone */
+  52% { transform: translate(calc(var(--walkX) + 4px), 0) scale(0.72); opacity: 0; }
+  60% { transform: translate(calc(var(--walkX) + 4px), 0) scale(0.72); opacity: 0; }
+  /* reposition unseen, fully offscreen past the nearer edge */
+  65% { transform: translateX(var(--peekFull)) scale(1); opacity: 0; }
+  66% { transform: translateX(var(--peekFull)) scale(1); opacity: 1; }
+  /* the peek: slide in until only hood and eye show, hold, slip away */
+  70% { transform: translateX(var(--peekX)) rotate(var(--peekTilt)); opacity: 1; }
+  77% { transform: translateX(var(--peekX)) rotate(var(--peekTilt)); opacity: 1; }
+  81% { transform: translateX(var(--peekFull)) rotate(0deg); opacity: 1; }
+  82% { transform: translateX(var(--peekFull)) rotate(0deg); opacity: 0; }
+  /* home again, unseen, then a slow fade back to the resting spot */
+  86% { transform: translateX(0); opacity: 0; }
+  90%, 100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes gmMiniDoorStory {
+  0%, 32% { opacity: 0; transform: scale(0.86); }
+  36%, 62% { opacity: 1; transform: scale(1); }
+  66%, 100% { opacity: 0; transform: scale(0.9); }
+}
+
+/* the leaf: shut while he walks, open as he arrives, shut behind him with a
+   small settle so the close has weight */
+@keyframes gmDoorLeaf {
+  0%, 46% { transform: scaleX(1); }
+  50%, 52% { transform: scaleX(0.12); }
+  56% { transform: scaleX(1.04); }
+  58%, 100% { transform: scaleX(1); }
+}
+
+/* the inner light: the door knows he is coming */
+@keyframes gmDoorGlow {
+  0%, 32% { opacity: 0.15; }
+  36% { opacity: 0.22; }
+  48%, 52% { opacity: 0.85; }
+  56% { opacity: 0.35; }
+  62%, 100% { opacity: 0.15; }
+}
+
+@keyframes gmSignSoft {
+  0%, 52% { filter: brightness(1); }
+  57%, 63% { filter: brightness(0.85); }
+  68%, 100% { filter: brightness(1); }
+}
+
+/* ---------- the quiet footer (D-056) ----------
+ * One contrast line (payments private, code public) and the repo link in
+ * gold mono. It rises last, after the entry button has ignited, small enough
+ * that it never competes with the one way in. */
+
+.gm-doorFoot {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: gmRise 0.7s ease 2.3s forwards;
+}
+
+.gm-doorFootLine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gm-ghLink {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(237, 182, 74, 0.35);
+  padding-bottom: 2px;
+  transition:
+    filter 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.gm-ghLink:hover {
+  filter: brightness(1.15);
+  border-color: var(--gold);
+}
+
+.gm-ghLink:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 @media (max-width: 860px) {
   .gm-doorMain {
     grid-template-columns: minmax(0, 1fr);
@@ -1216,6 +1501,14 @@ html[data-motion="less"] .gm-wMote2 {
   .gm-doorWatch {
     order: 2;
     width: 60%;
+  }
+
+  /* D-062: on the stacked layout the door tucks closer and narrows, so it
+     keeps its gap from the cloak and still fits a small phone width. */
+  .gm-wStory {
+    --walkX: 148px;
+    --doorW: 84px;
+    --doorRight: -24px;
   }
 }
 
@@ -1614,7 +1907,14 @@ html[data-motion="less"] .gm-wMote2 {
   }
 }
 
-/* ---------- the motion preference (D-045): everything lands at once ---------- */
+/* ---------- the motion preference (D-045, redefined by D-057) ----------
+   "Less" means calmer, not dead. Every animation (travel, floats, sweeps,
+   loops, the Watcher's story) ends at once in its final state, and movement
+   transitions are removed: nothing floats, walks, rises or slides. What
+   stays is a soft 0.2s fade on opacity and colour only, so hovers and
+   interactive states still answer the visitor without moving anything.
+   Large movement is what harms motion-sensitive people; a gentle fade does
+   not, and freezing everything made the choice look broken. */
 
 html[data-motion="less"] *,
 html[data-motion="less"] *::before,
@@ -1622,6 +1922,8 @@ html[data-motion="less"] *::after {
   animation-duration: 0.01ms !important;
   animation-delay: 0s !important;
   animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
+  transition-property: opacity, color, background-color, border-color, box-shadow, filter !important;
+  transition-duration: 0.2s !important;
   transition-delay: 0s !important;
+  scroll-behavior: auto !important;
 }

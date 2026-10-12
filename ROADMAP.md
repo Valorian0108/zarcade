@@ -411,6 +411,38 @@
   lists them); optional round gif only if time allows. Docs only, no code
   touched, gates unaffected.
 
+## Phase O — The door lives, the wait teaches, the Watcher is the face
+- Goal: the six changes the owner approved on 2026-10-12, in the agreed order.
+- Tasks:
+  - D-058 copy fix: "This is an arcade that teaches Zcash privacy." (door + metadata). DONE.
+  - D-056 quiet footer: contrast line + GITHUB link to Valorian0108/zarcade. DONE.
+  - D-057 "less" redefined: no movement, but gentle 0.2s opacity/colour fades stay. DONE.
+  - D-055 the Watcher's ~40s ambient story: idle, little door, walk through,
+    empty beat with a softer sign, screen-edge peek, slip away. DONE, pending owner eyeball.
+  - D-059 lever A: the sending screen teaches (real pipeline track, one live step,
+    "Real math takes real seconds."). DONE. Lever B declined for now, revisit post-Zecathon.
+  - D-060 the Watcher is the logo: app/icon.svg mark (hood + one lit eye). DONE, pending owner eyeball.
+  - Also fixed: README repo URL was Valorian0104, the real remote is Valorian0108.
+  - D-061 (found by self-audit mid-phase): the parse-time aria-pressed script
+    moved out of the toggle component into the server layout, because a script
+    in a client component warns on every client navigation. Verified: full
+    client-side door-arcade-machine chain with a clean console.
+  - D-062 the door restaged (owner picked option A): a door he can actually
+    enter. 96x210 on wide windows (84x210 stacked), clear gap to the right of
+    the cloak, feet on the ground-shadow line, layered behind him, threshold
+    hairline, inner light rises as he nears, leaf swings open, he steps in
+    shrinking to 0.72, leaf shuts with a small settle, closed door holds and
+    fades. Walk distance and door size are CSS variables per breakpoint, not
+    guesses. Verified by seek (not waiting): at rest the door clears the cloak
+    by ~25px and sits on the ground line; at entry his center is inside the
+    door with the leaf open at 0.12; the leaf closes behind him; the door fades
+    on cue; the sign softens to brightness(0.85) while the room is empty; the
+    peek and home beats are unchanged; under "less" none of it moves and the
+    0.2s fades stay. Gates green (typecheck, lint, 76 tests, build). DONE,
+    pending owner eyeball.
+- Definition of done: all six verified by machine in both motion modes, gates
+  green, and the owner has seen the story cycle and the logo and reacted.
+
 ---
 
 **Rule:** We do not start Phase N+1 until Phase N's definition of done is met

@@ -522,6 +522,31 @@ function Sending({ elapsed }: { elapsed: number }) {
         {elapsed}
         <span className="gm-amountUnit"> SECONDS</span>
       </p>
+
+      {/* The wait teaches (D-059, lever A). The seconds stay honest, and the
+          real pipeline appears under them. Only the build is marked live,
+          because that is the one step this screen can vouch for: the wallet
+          call reports nothing until it returns, and guessing a switch to
+          "broadcasting" from elapsed time would be a lie with a timer on it.
+          Both branches really do build a proof (an open payment spends
+          shielded coins, which has to be proved), so one honest track fits
+          both. */}
+      <p className="gm-sendTruth">Real math takes real seconds.</p>
+      <ol className="gm-steps" aria-label="What happens to this payment">
+        <li className="gm-step" data-state="live">
+          <span className="gm-stepDot" aria-hidden="true" />
+          Building the proof
+        </li>
+        <li className="gm-step" data-state="next">
+          <span className="gm-stepDot" aria-hidden="true" />
+          Broadcasting to the network
+        </li>
+        <li className="gm-step" data-state="next">
+          <span className="gm-stepDot" aria-hidden="true" />
+          Watching for the block
+        </li>
+      </ol>
+
       <p className="gm-callSub" style={{ marginTop: "auto", paddingTop: 22 }}>
         Please leave this page open. Closing it does not stop the payment, but you would miss
         seeing it land.

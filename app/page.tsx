@@ -4,7 +4,7 @@ import { Door } from "@/components/hub/door";
 
 export const metadata: Metadata = {
   description:
-    "An arcade that teaches Zcash. Every machine is a small game about one privacy feature, played with real practice money on the Zcash test network.",
+    "An arcade that teaches Zcash privacy. Every machine is a small game about one privacy feature, played with real practice money on the Zcash test network.",
 };
 
 export default function HomePage() {

@@ -51,7 +51,23 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/* D-051, relocated by D-061: the motion toggle's pressed state lands
+            during parsing, before paint, so a saved choice shows correctly on
+            a fresh load. It lives here (server layout, end of body) instead of
+            inside the toggle component: a script in a client component is
+            re-created on every client navigation, and React warns that it will
+            never execute there. Every page's toggle is in its server-rendered
+            HTML, so by the time the parser reaches this line the buttons exist.
+            React accepts the corrected DOM via suppressHydrationWarning on the
+            buttons (see motion-pref.tsx). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem("zarcade-motion");["more","less"].forEach(function(k){document.querySelectorAll('.gm-motionBtn[data-opt="'+k+'"]').forEach(function(b){b.setAttribute("aria-pressed",String(p===k))})})}catch(e){}})();`,
+          }}
+        />
+      </body>
     </html>
   );
 }

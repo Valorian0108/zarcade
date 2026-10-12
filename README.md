@@ -205,7 +205,8 @@ the owner decides, the assistant advises and drafts, and nothing is built
 until it is written down and approved. Every decision, D-001 through D-054,
 is logged in [DECISIONS.md](DECISIONS.md) with its why, its alternatives and
 who decided. Open questions stay visible until answered. The agreement itself
-is [AGREEMENT.md](AGREEMENT.md).
+is [AGREEMENT.md](AGREEMENT.md). The repository lives at
+github.com/Valorian0108/zarcade.
 
 ## Repo map
 

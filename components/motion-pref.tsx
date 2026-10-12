@@ -116,14 +116,14 @@ export function MotionToggle({ className = "" }: { className?: string }) {
           </button>
         ))}
       </div>
-      {/* D-051: pressed state lands during parsing, before paint, so a saved
-          choice shows correctly on a fresh load. React accepts the corrected
-          DOM via suppressHydrationWarning above. */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{var p=localStorage.getItem("zarcade-motion");["more","less"].forEach(function(k){document.querySelectorAll('.gm-motionBtn[data-opt="'+k+'"]').forEach(function(b){b.setAttribute("aria-pressed",String(p===k))})})}catch(e){}})();`,
-        }}
-      />
+      {/* D-051/D-061: the parse-time script that corrects aria-pressed for a
+          saved choice lives at the end of <body> in app/layout.tsx, not here.
+          A <script> inside a client component re-renders on every client
+          navigation, and React rightly refuses to execute (and loudly warns
+          about) scripts rendered on the client. In the server layout it runs
+          exactly once per full load, after this toggle's server-rendered HTML
+          exists, still before hydration and paint. The suppressHydrationWarning
+          above is what lets React accept the corrected DOM. */}
     </div>
   );
 }
