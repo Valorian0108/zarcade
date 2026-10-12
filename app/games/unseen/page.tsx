@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MotionPrefProvider } from "@/components/motion-pref";
 import { Unseen } from "@/components/game/unseen";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function UnseenPage() {
-  return <Unseen />;
+  return (
+    <MotionPrefProvider>
+      <Unseen />
+    </MotionPrefProvider>
+  );
 }

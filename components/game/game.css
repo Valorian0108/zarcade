@@ -1,0 +1,1627 @@
+/**
+ * The game's visual system (Layer 5, D-044), ported line for line from the
+ * owner-approved sample (app/sample/reveal-sample.css) so every screen wears
+ * the same skin, not just the reveal.
+ *
+ * Global stylesheet, not a CSS module: this project's Turbopack rule forces
+ * every *.css file through @tailwindcss/turbopack with `as: "*.css"`, which
+ * disables CSS-module scoping. Every class and keyframe here is prefixed with
+ * `gm-` so nothing can collide with the hub or the sample page.
+ *
+ * The one rule: gold light falls on what the public can read, sealed things
+ * stay in cool shadow. No red, no green, no verdict colours anywhere.
+ * Two panels, two perspectives, the Watcher on the divider as the hinge.
+ * Syne used expressively; mono only for on-chain data.
+ *
+ * Motion level follows the page's motion preference (D-045, D-051): an inline
+ * script puts the choice on <html> as data-motion before the first paint, and
+ * everything then lands at once with the lesson intact.
+ */
+
+.gm-root {
+  --line: rgba(255, 255, 255, 0.08);
+  --ink: #f4efe4;
+  --body: #c8c2d0;
+  --muted: #8b8496;
+  --gold: #edb64a;
+  --gold-bright: #ffcf6e;
+  --panel: #1b1724;
+  --raised: #221d2e;
+  --shadow-side: #a89fc4;
+
+  min-height: 100vh;
+  padding-bottom: 72px;
+  color: var(--body);
+  font-size: 15px;
+  background:
+    radial-gradient(38rem 26rem at 76% 4%, rgba(237, 182, 74, 0.07), transparent 62%),
+    radial-gradient(32rem 22rem at 8% 92%, rgba(124, 92, 205, 0.05), transparent 60%),
+    #141119;
+}
+
+/* ---------- honesty banner ---------- */
+
+.gm-banner {
+  margin: 0;
+  padding: 9px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- marquee header ---------- */
+
+.gm-marquee {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 24px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gm-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gm-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.34em;
+  color: var(--gold);
+}
+
+.gm-brandDiv,
+.gm-chipDiv {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+}
+
+.gm-chipDiv {
+  height: 12px;
+}
+
+.gm-gameName {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+  color: var(--ink);
+}
+
+.gm-marqueeRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gm-roundChip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.gm-roundTitle {
+  color: var(--body);
+  font-weight: 600;
+}
+
+/* ---------- the motion question (D-045) ---------- */
+
+.gm-motion {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.gm-motionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-motionBox {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.gm-motionBtn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.gm-motionBtn:hover {
+  color: var(--ink);
+}
+
+html[data-pref="less"] .gm-motionBtn[data-opt="less"],
+html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
+  color: #241a05;
+  background: linear-gradient(#f6c45e, #edb64a);
+}
+
+.gm-motionBtn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- stage: you | hinge | the record ---------- */
+
+.gm-stage {
+  max-width: 1120px;
+  margin: 18px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) 170px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.gm-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(8, 6, 12, 0.45);
+  overflow: hidden;
+  /* D-053: type inside a panel sizes by the panel, never by the window */
+  container-type: inline-size;
+}
+
+.gm-publicPanel {
+  border-color: rgba(237, 182, 74, 0.16);
+}
+
+.gm-publicPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(24rem 14rem at 88% -6%, rgba(237, 182, 74, 0.1), transparent 70%);
+}
+
+.gm-eyebrow {
+  margin: 0 0 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- plain content pieces inside panels ----------
+   Prose wears Voice 2 (D-047/D-049) at these default sizes; the serif-era
+   16px/1.7 tuning was reverted when the voice flipped to Space Grotesk. */
+
+.gm-prose {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--body);
+}
+
+.gm-prose:last-child {
+  margin-bottom: 0;
+}
+
+.gm-recordText {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--body);
+}
+
+.gm-goalCard {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+}
+
+.gm-goalLabel {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-goalText {
+  margin: 0;
+  color: var(--body);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.gm-amountLabel {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-amount {
+  margin: 6px 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(24px, 12cqi, 44px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.gm-amountUnit {
+  font-size: 0.42em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.gm-amountSub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* The record of the player's decision, written like a note in the margin of a
+   ledger rather than a UI badge: a gold rule, the call in the display face,
+   and the key word lit the same way public facts are lit everywhere else. */
+.gm-callNote {
+  margin-top: auto;
+  padding-top: 22px;
+  display: flex;
+  gap: 14px;
+}
+
+.gm-callRule {
+  flex: 0 0 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--gold-bright), rgba(237, 182, 74, 0.04));
+}
+
+.gm-callBody {
+  min-width: 0;
+}
+
+.gm-callLabel {
+  margin: 0 0 5px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-callChoice {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.gm-callSub {
+  margin: 7px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- intro list ---------- */
+
+.gm-introList {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gm-introItem {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.gm-introNum {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  padding-top: 4px;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- notices ---------- */
+
+.gm-notice {
+  border: 1px solid var(--line);
+  background: var(--raised);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--body);
+}
+
+.gm-notice[data-tone="bad"] {
+  border-color: rgba(168, 159, 196, 0.4);
+}
+
+/* ---------- summary rows ---------- */
+
+.gm-sumRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  background: var(--raised);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.gm-sumTitle {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.gm-sumLabel {
+  color: var(--muted);
+}
+
+.gm-sumMeta {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.gm-sumState {
+  font-weight: 600;
+  color: var(--body);
+}
+
+.gm-sumState[data-met="false"] {
+  color: var(--muted);
+}
+
+/* ---------- the hinge: divider + Watcher ---------- */
+
+.gm-hinge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-hingeLine {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  bottom: 6%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.13) 18% 82%, transparent);
+}
+
+.gm-watcher {
+  position: relative;
+  z-index: 1;
+  width: 148px;
+}
+
+.gm-watcher svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: rotate(4deg);
+  transform-origin: 50% 90%;
+  filter: drop-shadow(0 14px 26px rgba(8, 6, 12, 0.6));
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gm-watcher[data-mood="alert"] svg {
+  transform: rotate(6deg) translateX(4px);
+}
+
+.gm-watcher[data-mood="blind"] svg {
+  transform: rotate(-3deg) scale(0.97);
+}
+
+.gm-wFloat {
+  animation: gmFloat 6s ease-in-out infinite alternate;
+}
+
+.gm-wGlow {
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  animation: gmFlicker 3.2s ease-in-out infinite;
+}
+
+.gm-watcher[data-mood="alert"] .gm-wGlow {
+  opacity: 1;
+  transform: scale(1.14);
+}
+
+.gm-watcher[data-mood="blind"] .gm-wGlow {
+  opacity: 0.22;
+  animation: none;
+}
+
+.gm-wRim {
+  opacity: 0.7;
+  transition: opacity 0.7s ease;
+}
+
+.gm-watcher[data-mood="alert"] .gm-wRim {
+  opacity: 1;
+}
+
+.gm-watcher[data-mood="blind"] .gm-wRim {
+  opacity: 0.15;
+}
+
+.gm-wEye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gmBlink 6.5s linear infinite;
+  transition: transform 0.4s ease;
+}
+
+.gm-watcher[data-mood="alert"] .gm-wEye {
+  transform: scale(1.1);
+}
+
+.gm-watcher[data-mood="blind"] .gm-wEye {
+  animation: none;
+}
+
+.gm-wLid {
+  transform-box: fill-box;
+  transform-origin: top;
+  transform: scaleY(0);
+  transition: transform 0.12s ease;
+}
+
+.gm-watcher[data-mood="blind"] .gm-wLid {
+  transform: scaleY(1);
+}
+
+.gm-wPupil {
+  animation: gmDrift 9s ease-in-out infinite alternate;
+}
+
+.gm-wFlame {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: gmFlame 2.4s ease-in-out infinite;
+  transition: opacity 0.7s ease;
+}
+
+.gm-watcher[data-mood="blind"] .gm-wFlame {
+  opacity: 0.3;
+}
+
+.gm-wMote1 {
+  animation: gmMote1 7s ease-in-out infinite;
+}
+
+.gm-wMote2 {
+  animation: gmMote2 9s ease-in-out infinite;
+}
+
+html[data-motion="less"] .gm-wFloat,
+html[data-motion="less"] .gm-wGlow,
+html[data-motion="less"] .gm-wEye,
+html[data-motion="less"] .gm-wPupil,
+html[data-motion="less"] .gm-wFlame,
+html[data-motion="less"] .gm-wMote1,
+html[data-motion="less"] .gm-wMote2 {
+  animation: none;
+}
+
+/* ---------- the public record rows ---------- */
+
+.gm-rows {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.gm-row {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1f1a2b;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.45s ease, background 0.45s ease, box-shadow 0.45s ease;
+}
+
+.gm-row[data-state="lit"] {
+  border-color: rgba(237, 182, 74, 0.35);
+  background: linear-gradient(90deg, rgba(237, 182, 74, 0.08), rgba(237, 182, 74, 0.02) 55%, #1f1a2b);
+  box-shadow: 0 0 24px rgba(237, 182, 74, 0.08);
+}
+
+.gm-row[data-state="lit"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--gold-bright), var(--gold));
+  box-shadow: 0 0 12px rgba(237, 182, 74, 0.7);
+}
+
+.gm-row[data-state="sealed"] {
+  background: #171321;
+  border-color: rgba(150, 140, 190, 0.2);
+}
+
+.gm-rowHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.gm-rowLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-rowTag {
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.4s ease 0.2s;
+  white-space: nowrap;
+}
+
+.gm-rowTag[data-on="true"] {
+  opacity: 1;
+}
+
+.gm-row[data-state="lit"] .gm-rowTag {
+  color: var(--gold-bright);
+}
+
+.gm-row[data-state="sealed"] .gm-rowTag {
+  color: var(--shadow-side);
+}
+
+.gm-rowBody {
+  position: relative;
+  margin-top: 8px;
+  min-height: 46px;
+}
+
+.gm-rowValue {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.gm-row[data-state="lit"] .gm-rowValue {
+  text-shadow: 0 0 18px rgba(237, 182, 74, 0.35);
+}
+
+.gm-rowSub {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.gm-sealBar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: linear-gradient(#211b2e, #1a1526);
+  border: 1px solid rgba(160, 148, 200, 0.24);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #b6add1;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.gm-sealBar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 178, 235, 0.75), transparent);
+  opacity: 0.3;
+}
+
+.gm-row[data-state="sealed"] .gm-sealBar {
+  animation: gmSettle 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gm-row[data-state="sealed"] .gm-sealBar::after {
+  animation: gmSeamFlash 1.1s ease-out;
+}
+
+/* the shutter that hides each answer until the record is read */
+.gm-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: linear-gradient(#251f33, #211b2d);
+  color: rgba(200, 194, 208, 0.4);
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gm-coverSeam {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gm-row[data-state="lit"] .gm-cover,
+.gm-row[data-state="sealed"] .gm-cover,
+.gm-row[data-state="none"] .gm-cover {
+  transform: translateX(103%);
+}
+
+/* ---------- leak readout + receipt ---------- */
+
+.gm-readout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.gm-pips {
+  display: flex;
+  gap: 6px;
+}
+
+.gm-pip {
+  width: 28px;
+  height: 6px;
+  border-radius: 3px;
+  background: #2c2738;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.gm-pip[data-lit="true"] {
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  box-shadow: 0 0 10px rgba(237, 182, 74, 0.5);
+}
+
+.gm-readoutText {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--body);
+}
+
+.gm-readoutText strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.gm-receipt {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+}
+
+.gm-mono {
+  font-family: var(--font-mono);
+}
+
+.gm-receiptDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.gm-receiptLink {
+  margin-left: auto;
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.gm-receiptLink:hover {
+  color: var(--gold-bright);
+}
+
+/* ---------- the twist caption (single teaching place) ---------- */
+
+.gm-caption {
+  max-width: 1120px;
+  margin: 6px auto 0;
+  padding: 0 24px;
+}
+
+.gm-twist {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gm-twist[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.gm-litWord {
+  color: var(--gold-bright);
+  text-shadow: 0 0 22px rgba(237, 182, 74, 0.45);
+}
+
+.gm-shadowWord {
+  color: var(--shadow-side);
+}
+
+.gm-teach {
+  max-width: 640px;
+  margin: 14px 0 0;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--body);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease 0.15s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+.gm-teach[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- actions ---------- */
+
+.gm-actions {
+  max-width: 1120px;
+  margin: 28px auto 0;
+  padding: 0 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gm-btnPrimary {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: #241a05;
+  background: linear-gradient(#f6c45e, #edb64a);
+  border: 1px solid var(--gold-bright);
+  border-radius: 10px;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow:
+    0 0 28px rgba(237, 182, 74, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.14s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.gm-btnPrimary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    0 0 36px rgba(237, 182, 74, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.gm-btnPrimary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 0 16px rgba(237, 182, 74, 0.25);
+}
+
+.gm-btnPrimary:disabled {
+  filter: grayscale(0.7) brightness(0.6);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.gm-btnGhost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--body);
+  border-radius: 10px;
+  padding: 14px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.gm-btnGhost:hover:not(:disabled) {
+  border-color: rgba(237, 182, 74, 0.45);
+  color: var(--ink);
+}
+
+.gm-btnGhost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gm-btnPrimary:focus-visible,
+.gm-btnGhost:focus-visible,
+.gm-receiptLink:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- keyframes ---------- */
+
+@keyframes gmFloat {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes gmBlink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.06);
+  }
+  97.5% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes gmDrift {
+  from {
+    transform: translateX(-1.5px);
+  }
+  to {
+    transform: translateX(1.5px);
+  }
+}
+
+@keyframes gmFlicker {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  45% {
+    opacity: 0.82;
+  }
+  70% {
+    opacity: 0.64;
+  }
+}
+
+@keyframes gmFlame {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.12, 0.94);
+    opacity: 1;
+  }
+}
+
+@keyframes gmMote1 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-10px, -34px);
+    opacity: 0;
+  }
+}
+
+@keyframes gmMote2 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(8px, -44px);
+    opacity: 0;
+  }
+}
+
+@keyframes gmSettle {
+  0% {
+    transform: scale(1.05);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(0.995);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes gmSeamFlash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* ---------- mobile: same order, one column, hinge stays the hinge ---------- */
+
+@media (max-width: 920px) {
+  .gm-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .gm-hinge {
+    height: 132px;
+  }
+
+  .gm-hingeLine {
+    left: 8%;
+    right: 8%;
+    top: 50%;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.13) 18% 82%, transparent);
+  }
+
+  .gm-watcher {
+    width: 112px;
+  }
+
+  .gm-marquee {
+    justify-content: center;
+  }
+
+  .gm-receiptLink {
+    margin-left: 0;
+  }
+}
+
+/* ---------- the front door (D-050) ----------
+ * The door's only jobs: say the name, say what the place is, make you feel
+ * watched, offer one way in. Choreography (~2s, then quiet forever):
+ *   ~100ms  honesty banner rises
+ *   ~400ms  sign flickers once like a real neon tube, ~950ms gold sweep
+ *           passes through the letters, ~1500ms steady glow settles
+ *   ~950ms / ~1250ms  two prose lines at reading pace
+ *   ~1250ms Watcher rises; JS flips mood blind -> alert -> calm so the eye
+ *           opens with ONE lantern flare (existing mood machinery, no new
+ *           watcher code)
+ *   ~1750ms entry button ignites, ~4.6s slow attract pulse (>= 4s, D-042)
+ * Only two new motions exist here (neon flicker, marquee sweep) and both are
+ * things a real arcade sign physically does. Under html[data-motion="less"]
+ * the global D-045 rule below lands every state instantly; the JS sequence
+ * is skipped. */
+
+.gm-door {
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-door .gm-banner {
+  opacity: 0;
+  animation: gmRise 0.6s ease 0.1s forwards;
+}
+
+.gm-doorTop {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 24px 0;
+  display: flex;
+  justify-content: flex-end;
+  opacity: 0;
+  animation: gmRise 0.6s ease 0.1s forwards;
+}
+
+.gm-doorMain {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+}
+
+.gm-doorSide {
+  min-width: 0;
+  /* D-053: the sign sizes by its column, so it can never slide under the
+     Watcher on a wide window */
+  container-type: inline-size;
+}
+
+.gm-doorTitle {
+  position: relative;
+  margin: 26px 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(18px, 10cqi, 80px);
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+
+.gm-doorTitleBase {
+  display: block;
+  opacity: 0;
+  animation:
+    gmSignFlicker 1s linear 0.4s forwards,
+    gmSignGlow 0.9s ease 1.5s forwards;
+}
+
+.gm-doorTitleSweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    #ffe3a3 50%,
+    transparent 62%
+  );
+  background-size: 250% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  animation: gmSignSweep 1.5s ease 0.95s forwards;
+  pointer-events: none;
+}
+
+.gm-doorLine {
+  margin: 18px 0 0;
+  max-width: 540px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--body);
+  opacity: 0;
+  animation: gmRise 0.7s ease 1.25s forwards;
+}
+
+.gm-doorLine[data-lead="true"] {
+  font-size: 21px;
+  color: var(--ink);
+  animation-delay: 0.95s;
+}
+
+.gm-doorBtn {
+  margin-top: 34px;
+  opacity: 0;
+  box-shadow: none;
+  animation:
+    gmBtnIgnite 0.9s ease 1.75s forwards,
+    gmBtnAttract 4.5s ease-in-out 4.6s infinite;
+}
+
+.gm-doorWatch {
+  justify-self: center;
+  opacity: 0;
+  animation: gmRise 0.9s ease 1.25s forwards;
+}
+
+@media (max-width: 860px) {
+  .gm-doorMain {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding-bottom: 72px;
+  }
+
+  .gm-doorWatch {
+    order: 2;
+    width: 60%;
+  }
+}
+
+/* ---------- the arcade floor (D-050) ----------
+ * The D-019 cabinet room restyled into the Layer 5 system: same asymmetric
+ * truth (one lit machine, dark ones quiet), gold means live, shadow means
+ * sealed. Cabinets fade in on a stagger; the lit one rises last, ignites,
+ * then holds a slow attract pulse. Fades (not rises) keep `transform` free
+ * for the hover lift. */
+
+.gm-floor {
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-wordmarkLink {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.gm-wordmarkLink:hover {
+  filter: brightness(1.15);
+}
+
+.gm-floorHead {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 24px 0;
+}
+
+.gm-floorTitle {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 40px);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  opacity: 0;
+  animation: gmRise 0.7s ease 0.15s forwards;
+}
+
+.gm-floorRoom {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 34px 24px 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.gm-floorRest {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.gm-floorNote {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 6px 24px 0;
+  font-size: 14.5px;
+  color: var(--muted);
+  opacity: 0;
+  animation: gmRise 0.7s ease 1.9s forwards;
+}
+
+@media (max-width: 900px) {
+  .gm-floorRoom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .gm-floorRest {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- cabinets (D-019 design, Layer 5 skin) ---------- */
+
+.gm-cab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  overflow: hidden;
+  text-align: left;
+  cursor: default;
+  font: inherit;
+  color: inherit;
+  opacity: 0;
+  animation: gmCabRise 0.7s ease forwards;
+  transition:
+    transform 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s ease;
+}
+
+.gm-cab[data-lit="true"] {
+  cursor: pointer;
+  border-color: rgba(237, 182, 74, 0.35);
+  animation:
+    gmCabRise 0.7s ease 1.15s forwards,
+    gmCabIgnite 0.9s ease 1.5s forwards,
+    gmCabAttract 5s ease-in-out 4.5s infinite;
+}
+
+.gm-cab[data-lit="true"]:hover {
+  transform: translateY(-1px);
+  border-color: rgba(237, 182, 74, 0.55);
+}
+
+.gm-cab[data-lit="true"]:active {
+  transform: translateY(1px);
+}
+
+.gm-cabMarquee {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--raised);
+}
+
+.gm-cab[data-lit="true"] .gm-cabMarquee {
+  font-size: 18px;
+  color: var(--gold);
+  background: rgba(237, 182, 74, 0.1);
+  border-bottom-color: rgba(237, 182, 74, 0.25);
+}
+
+.gm-cabScreenWell {
+  padding: 12px;
+}
+
+.gm-cabScreen {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #131019;
+  overflow: hidden;
+}
+
+.gm-cab[data-lit="true"] .gm-cabScreen {
+  height: 164px;
+}
+
+/* the power-on beat when you press a lit cabinet: one gold flare, then go */
+.gm-cabScreen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gm-cab[data-clicking="true"] .gm-cabScreen::after {
+  animation: gmCabFlare 0.45s ease forwards;
+}
+
+.gm-cabGlyph {
+  display: flex;
+  color: var(--muted);
+  opacity: 0.4;
+  transition: opacity 0.16s ease;
+}
+
+.gm-cab:hover .gm-cabGlyph {
+  opacity: 0.65;
+}
+
+.gm-cabDeck {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+}
+
+.gm-cabDots {
+  display: flex;
+  gap: 6px;
+}
+
+.gm-cabDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+}
+
+.gm-cabDotSmall {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.gm-cab[data-lit="true"] .gm-cabDot {
+  border-color: rgba(237, 182, 74, 0.5);
+  background: rgba(237, 182, 74, 0.2);
+}
+
+.gm-cab[data-lit="true"] .gm-cabDotSmall {
+  background: rgba(237, 182, 74, 0.45);
+}
+
+.gm-cabPlate {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding: 10px 14px 12px;
+}
+
+.gm-cabTeach {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.gm-cab[data-lit="true"] .gm-cabTeach {
+  color: var(--body);
+}
+
+.gm-cabStatus {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gm-cab[data-lit="true"] .gm-cabStatus {
+  color: var(--gold);
+}
+
+/* ---------- door + floor keyframes ---------- */
+
+@keyframes gmRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* a real neon tube striking: a few sharp stutters, then steady */
+@keyframes gmSignFlicker {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.65;
+  }
+  12% {
+    opacity: 0.1;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  24% {
+    opacity: 0.25;
+  }
+  34% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0.55;
+  }
+  46% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes gmSignGlow {
+  from {
+    text-shadow: 0 0 0 rgba(237, 182, 74, 0);
+  }
+  to {
+    text-shadow: 0 0 34px rgba(237, 182, 74, 0.3);
+  }
+}
+
+/* one slow gold pass through the letters, like a marquee light sweep */
+@keyframes gmSignSweep {
+  0% {
+    background-position: 130% 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    background-position: -30% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes gmBtnIgnite {
+  from {
+    opacity: 0;
+    box-shadow: none;
+  }
+  to {
+    opacity: 1;
+    box-shadow:
+      0 0 28px rgba(237, 182, 74, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* attract pulse: slow (4.5s, above the D-042 floor of ~4s) */
+@keyframes gmBtnAttract {
+  0%,
+  100% {
+    box-shadow:
+      0 0 28px rgba(237, 182, 74, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 44px rgba(237, 182, 74, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* opacity-only rise so hover lift keeps `transform` free */
+@keyframes gmCabRise {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gmCabIgnite {
+  from {
+    box-shadow: none;
+  }
+  to {
+    box-shadow:
+      0 0 0 1px rgba(237, 182, 74, 0.32),
+      0 10px 44px -14px rgba(237, 182, 74, 0.55);
+  }
+}
+
+@keyframes gmCabAttract {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(237, 182, 74, 0.32),
+      0 10px 44px -14px rgba(237, 182, 74, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(237, 182, 74, 0.42),
+      0 14px 56px -14px rgba(237, 182, 74, 0.75);
+  }
+}
+
+@keyframes gmCabFlare {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- the motion preference (D-045): everything lands at once ---------- */
+
+html[data-motion="less"] *,
+html[data-motion="less"] *::before,
+html[data-motion="less"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+}

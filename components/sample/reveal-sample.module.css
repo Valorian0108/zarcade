@@ -1,0 +1,9 @@
+/*
+ * DEAD FILE, kept only to avoid confusion until cleanup.
+ *
+ * CSS modules do not work in this project: the Turbopack rule in
+ * next.config.ts sends every *.css through @tailwindcss/turbopack with
+ * `as: "*.css"`, which strips module scoping (unhashed classes, empty JS
+ * exports). The sample now uses the global stylesheet at
+ * app/sample/reveal-sample.css with `smp-` prefixed classes.
+ */

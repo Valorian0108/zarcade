@@ -1,17 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { shortenAddress } from "@/lib/zcash/format";
 import {
-  AFTER_HIDDEN_LINE,
   leakFromFacts,
-  leakLabelFor,
   metGoal,
   parseProgressOutcome,
   parseSendOutcome,
   POOL_FIRST_MENTION,
-  POOL_LATER,
   ROUNDS,
   scoreGame,
   summaryLine,
@@ -22,17 +17,18 @@ import {
   type SendOutcome,
 } from "@/lib/unseen";
 import { GameFrame } from "./frame";
-import { PaymentRows, type PaymentRow } from "./payment-rows";
-import { PublicPanel } from "./public-panel";
+import { Reveal } from "./reveal";
 
 /**
  * Unseen, the full game (B5).
  *
  * Three rounds, three different asks, and a real Zcash testnet payment behind
  * every one of them. The screen never states what a payment revealed from memory:
- * the leak meter, the sealed rows, and the "what a stranger can see" panel are all
- * driven by facts the server read back off the chain, and the explorer link is
- * right there so a player can check this screen against the real record.
+ * the shuttered rows, the pips, and the twist line in the reveal (Layer 5,
+ * D-044) are all driven by facts the server read back off the chain, and the
+ * explorer link is right there so a player can check this screen against the
+ * real record. The paid phase belongs to the Reveal component outright: two
+ * panels, the Watcher on the hinge, and the truth landing last.
  *
  * Scoring is about matching the ask, not about leaking as little as possible. Two
  * of the three rounds are supposed to be open, and one of those has no other
@@ -40,7 +36,8 @@ import { PublicPanel } from "./public-panel";
  * thing. See lib/unseen.ts.
  *
  * Copy follows the Layer 4 voice rule (D-018): plain words, short sentences, no em
- * dashes. Every motion honours prefers-reduced-motion (Layer 2 rule 7).
+ * dashes. Motion level follows the page's motion preference (D-045), which starts
+ * from the computer's own prefers-reduced-motion setting.
  */
 
 /** How often to ask where the payment has got to. Matches the server's brake. */
@@ -223,26 +220,52 @@ export function Unseen() {
     setPhase({ name: "intro" });
   }, []);
 
-  // What the frame shows. The mood, the meter, and the panel all come from the
-  // real facts once a payment exists, and stay empty until then.
-  const facts = phase.name === "paid" ? phase.send.publicFacts : null;
-  const hidden = phase.name === "paid" && phase.choice === "hide";
-  const watcherMood = facts ? (hidden ? "blind" : "alert") : "calm";
-  const leak = facts ? leakFromFacts(facts) : 0;
-  const leakLabel = facts ? leakLabelFor(facts) : "Nothing yet. You have not sent anything.";
-
+  // The frame's readouts. With no payment on screen yet there is nothing to
+  // report, and the frame says exactly that. The paid phase never reaches the
+  // frame: the reveal below owns it.
   const landed = progress !== null && progress.ok && progress.landed;
   const block = landed && progress && progress.ok ? progress.block : null;
   const confirmations = progress && progress.ok ? progress.confirmations : 0;
+
+  if (phase.name === "paid") {
+    return (
+      <Reveal
+        index={phase.index}
+        choice={phase.choice}
+        amountTaz={phase.send.amountTaz}
+        facts={phase.send.publicFacts}
+        txid={phase.send.txid}
+        explorerUrl={phase.send.explorerUrl}
+        landed={landed}
+        block={block}
+        confirmations={confirmations}
+        onNext={continueOn}
+      />
+    );
+  }
 
   return (
     <GameFrame
       title="Unseen"
       teach="Send money without the whole network watching, and learn when hiding helps."
-      watcherMood={watcherMood}
-      leak={leak}
-      leakLabel={leakLabel}
-      description={descriptionFor(phase, outcomes, elapsed, landed)}
+      chip={chipFor(phase)}
+      panelLabel={panelLabelFor(phase)}
+      watcherMood="calm"
+      leak={0}
+      leakLabel="Nothing yet. You have not sent anything."
+      description={descriptionFor(phase, outcomes, landed)}
+      caption={captionFor(phase, outcomes)}
+      showLeakMeter={phase.name !== "summary"}
+      receipts={
+        phase.name === "summary"
+          ? outcomes.map((outcome, i) => ({
+              label: ROUNDS[i].label,
+              txid: outcome.txid,
+              block: outcome.block,
+              url: outcome.explorerUrl,
+            }))
+          : []
+      }
     >
       {phase.name === "intro" && (
         <Intro house={house} onStart={() => setPhase({ name: "brief", index: 0 })} />
@@ -257,38 +280,7 @@ export function Unseen() {
         />
       )}
 
-      {phase.name === "sending" && <Sending choice={phase.choice} elapsed={elapsed} />}
-
-      {phase.name === "paid" && (
-        <div className="space-y-4">
-          <PaymentRows rows={rowsFor(phase.send, phase.choice)} caption={ROWS_CAPTION} />
-
-          {hidden && (
-            <p className="rounded-lg border border-valid/30 bg-valid/5 p-3.5 text-sm leading-6 text-foreground">
-              {AFTER_HIDDEN_LINE}
-            </p>
-          )}
-
-          <PublicPanel
-            facts={phase.send.publicFacts}
-            txid={phase.send.txid}
-            explorerUrl={phase.send.explorerUrl}
-            amountTaz={phase.send.amountTaz}
-            landed={landed}
-            block={block}
-            confirmations={confirmations}
-            poolName={POOL_LATER}
-          />
-
-          <Result
-            index={phase.index}
-            choice={phase.choice}
-            landed={landed}
-            block={block}
-            onNext={continueOn}
-          />
-        </div>
-      )}
+      {phase.name === "sending" && <Sending elapsed={elapsed} />}
 
       {phase.name === "summary" && <Summary outcomes={outcomes} onRestart={restart} />}
     </GameFrame>
@@ -297,73 +289,106 @@ export function Unseen() {
 
 /* -------------------------------------------------------------------------- */
 
-/** The four rows, worked out from what the chain really says about this payment. */
-function rowsFor(send: Paid, choice: Branch): PaymentRow[] {
-  const facts = send.publicFacts;
-  const address =
-    facts.recipient ?? (choice === "hide" ? "The arcade's private address" : "The arcade's open address");
-
-  return [
-    {
-      label: "Sent from",
-      value: "The arcade's wallet",
-      state: facts.senderVisible ? "open" : "sealed",
-      barWidth: "8.5rem",
-    },
-    {
-      label: "Sent to",
-      value:
-        facts.recipientVisible && facts.recipient ? (
-          <span className="font-mono text-xs">{shortenAddress(facts.recipient)}</span>
-        ) : (
-          address
-        ),
-      state: facts.recipientVisible ? "open" : "sealed",
-      barWidth: "9.5rem",
-    },
-    {
-      label: "Amount",
-      value: <span className={facts.amountVisible ? "font-mono text-xs" : ""}>{send.amountTaz} TAZ</span>,
-      state: facts.amountVisible ? "open" : "sealed",
-      barWidth: "8rem",
-    },
-    {
-      label: "Note",
-      value: facts.notePossible ? "A note rides along with it" : "No note is possible here",
-      // An open payment cannot carry a note at all, so there is nothing there to
-      // seal and nothing there to leak.
-      state: facts.notePossible ? (facts.noteSecret ? "sealed" : "open") : "none",
-      barWidth: "10.5rem",
-    },
-  ];
+/** The round chip in the marquee, one identity across every screen. */
+function chipFor(phase: Phase): [string, string] {
+  switch (phase.name) {
+    case "intro":
+      return ["Before round 1", "Three asks"];
+    case "brief":
+    case "sending":
+      return [ROUNDS[phase.index].label, ROUNDS[phase.index].title];
+    case "paid":
+      return [ROUNDS[phase.index].label, ROUNDS[phase.index].title];
+    case "summary":
+      return ["After round 3", "The whole game"];
+  }
 }
 
-const ROWS_CAPTION =
-  "The dark bars are not decoration. Each one covers something the network was not told.";
+/** The eyebrow over the left panel, per moment. */
+function panelLabelFor(phase: Phase): string {
+  switch (phase.name) {
+    case "intro":
+      return "Before you start";
+    case "brief":
+      return "The ask";
+    case "sending":
+      return "The wallet at work";
+    case "paid":
+      return "Your side";
+    case "summary":
+      return "The whole game";
+  }
+}
 
-/** Plain words for the panel beside the stage, one sentence per moment. */
+/** One status sentence for the record panel (D-046). Teaching prose lives in
+    the caption slot below the stage, not here. */
 function descriptionFor(
   phase: Phase,
   outcomes: readonly RoundOutcome[],
-  elapsed: number,
   landed: boolean,
 ): string {
   switch (phase.name) {
     case "intro":
-      return "Three rounds, three different asks. Every round sends a real payment.";
+      return "Nothing on the chain yet.";
     case "brief":
-      return ROUNDS[phase.index].brief;
+      return "No payment sent this round yet.";
     case "sending":
       return phase.choice === "hide"
-        ? `The wallet is building a real proof. ${elapsed} seconds so far, and about twenty is normal here.`
-        : `Sending now. ${elapsed} seconds so far. This one still needs a proof, because the coins are leaving the private pool.`;
-    case "paid": {
-      const round = ROUNDS[phase.index];
-      const teach = phase.choice === "hide" ? (round.teachHidden ?? round.teachOpen) : round.teachOpen;
-      return landed ? teach : `${teach} The payment is on its way into a block.`;
-    }
+        ? "A hidden payment is building its proof now."
+        : "An open payment is building its proof now.";
+    case "paid":
+      return landed ? "The payment is in a block." : "The payment is on its way into a block.";
     case "summary":
-      return summaryLine(scoreGame(outcomes));
+      return `Three real payments. ${outcomes.length} of ${ROUNDS.length} rounds read back.`;
+  }
+}
+
+/** The teaching prose for the caption slot below the stage (D-046). Two short
+    paragraphs maximum, in the big voice. */
+function captionFor(phase: Phase, outcomes: readonly RoundOutcome[]): ReactNode {
+  switch (phase.name) {
+    case "intro":
+      return (
+        <>
+          <p className="gm-teach" data-on={true}>
+            Every round sends a real payment on the Zcash test network, and you get a link to the
+            public record so you can check what this screen claims.
+          </p>
+          <p className="gm-teach" data-on={true}>
+            The one thing to work out is when hiding helps and when it gets in the way. The rounds
+            do not all want the same answer.
+          </p>
+        </>
+      );
+    case "brief":
+      return (
+        <p className="gm-teach" data-on={true}>
+          {ROUNDS[phase.index].brief}
+        </p>
+      );
+    case "sending":
+      return (
+        <p className="gm-teach" data-on={true}>
+          {phase.choice === "hide"
+            ? "The proof is real mathematics, and it is what lets the network check the payment without being told anything about it. On this machine that takes about twenty seconds."
+            : "An open payment needs a proof too, because the coins sit in the private pool and leaving it has to be proved. That is why it takes about as long. What changes is what the proof lets stay secret. Here anybody can read the destination and the amount."}
+        </p>
+      );
+    case "paid":
+      return null;
+    case "summary":
+      return (
+        <>
+          <p className="gm-teach" data-on={true}>
+            {summaryLine(scoreGame(outcomes))}
+          </p>
+          <p className="gm-teach" data-on={true}>
+            Every payment above is real and stays on the test network for good. The hidden ones
+            cannot be read by anyone, and the open ones can be read by everyone, forever. The
+            receipts on the right open the real record.
+          </p>
+        </>
+      );
   }
 }
 
@@ -371,29 +396,27 @@ function Intro({ house, onStart }: { house: House; onStart: () => void }) {
   const blocked = house !== null && (house.refilling || !house.ready);
 
   return (
-    <div className="space-y-4">
-      <ol className="space-y-2 text-sm leading-6 text-foreground">
-        <li>1. Keep a payment to yourself.</li>
-        <li>2. Prove a payment happened.</li>
-        <li>3. Pay an address that can only be reached in the open.</li>
+    <>
+      <ol className="gm-introList">
+        <li className="gm-introItem">
+          <span className="gm-introNum">01</span> Keep a payment to yourself.
+        </li>
+        <li className="gm-introItem">
+          <span className="gm-introNum">02</span> Prove a payment happened.
+        </li>
+        <li className="gm-introItem">
+          <span className="gm-introNum">03</span> Pay an address that can only be reached in the
+          open.
+        </li>
       </ol>
 
-      <p className="text-sm leading-6 text-muted-foreground">
-        Every round sends a real payment on the Zcash test network, and you get a link to the public
-        record so you can check what this screen claims.
-      </p>
-
-      <p className="text-sm leading-6 text-muted-foreground">
-        The one thing to work out is when hiding helps and when it gets in the way. The rounds do not
-        all want the same answer.
-      </p>
-
-      <div className="rounded-lg border border-border bg-secondary p-4 text-sm leading-6 text-foreground">
-        <p>
-          About the money. This is practice money, and both destinations belong to the arcade, so
-          nothing leaves the building. You never need a wallet, a seed, or a key of your own.
+      <div className="gm-goalCard">
+        <p className="gm-goalLabel">About the money</p>
+        <p className="gm-goalText">
+          This is practice money, and both destinations belong to the arcade, so nothing leaves the
+          building. You never need a wallet, a seed, or a key of your own.
         </p>
-        <p className="mt-2.5">
+        <p className="gm-goalText" style={{ marginTop: 10 }}>
           When you hide a payment it goes into {POOL_FIRST_MENTION}. A pool is just a group of
           payments that all look the same from outside, and that is what makes any one of them hard
           to single out.
@@ -402,8 +425,8 @@ function Intro({ house, onStart }: { house: House; onStart: () => void }) {
 
       {house !== null && house.refilling && (
         <Notice tone="wait">
-          The arcade is refilling its coins. That takes a few minutes and nobody can play during it.
-          Nothing is broken.
+          The arcade is refilling its coins. That takes a few minutes and nobody can play during
+          it. Nothing is broken.
         </Notice>
       )}
       {house !== null && !house.refilling && !house.ready && (
@@ -413,10 +436,12 @@ function Intro({ house, onStart }: { house: House; onStart: () => void }) {
         </Notice>
       )}
 
-      <Button onClick={onStart} disabled={blocked} size="lg">
-        Start round 1
-      </Button>
-    </div>
+      <div className="gm-actions" style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}>
+        <button type="button" className="gm-btnPrimary" onClick={onStart} disabled={blocked}>
+          Start round 1
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -438,19 +463,14 @@ function Brief({
   const wait = problem && problem.kind === "limited" ? waitInWords(problem.retryAfterSeconds) : null;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="text-xs font-medium text-muted-foreground">{round.label}</p>
-        <h2 className="mt-1 font-display text-xl font-semibold tracking-tight text-foreground">
-          {round.title}
-        </h2>
-      </div>
+    <>
+      <p className="gm-callChoice" style={{ marginBottom: 12 }}>
+        {round.title}
+      </p>
 
-      <p className="text-sm leading-6 text-foreground">{round.brief}</p>
-
-      <div className="rounded-lg border border-border bg-secondary p-4">
-        <p className="text-xs font-medium text-muted-foreground">What doing this well means</p>
-        <p className="mt-1.5 text-sm leading-6 text-foreground">{round.goal}</p>
+      <div className="gm-goalCard">
+        <p className="gm-goalLabel">What doing this well means</p>
+        <p className="gm-goalText">{round.goal}</p>
       </div>
 
       {problem && (
@@ -467,94 +487,46 @@ function Brief({
         </Notice>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 pt-1">
-        <Button onClick={() => onChoose("hide")} disabled={!canHide} size="lg">
+      <div
+        className="gm-actions"
+        style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}
+      >
+        <button
+          type="button"
+          className="gm-btnPrimary"
+          onClick={() => onChoose("hide")}
+          disabled={!canHide}
+        >
           Hide it
-        </Button>
-        <Button variant="outline" onClick={() => onChoose("open")} size="lg">
+        </button>
+        <button type="button" className="gm-btnGhost" onClick={() => onChoose("open")}>
           Do not hide it
-        </Button>
+        </button>
       </div>
 
       {!canHide && round.lockedWhy && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          <span className="font-medium text-foreground">Why you cannot hide this one. </span>
+        <p className="gm-callSub">
+          <span style={{ color: "var(--ink)", fontWeight: 600 }}>Why you cannot hide this one. </span>
           {round.lockedWhy}
         </p>
       )}
-    </div>
+    </>
   );
 }
 
-function Sending({ choice, elapsed }: { choice: Branch; elapsed: number }) {
+function Sending({ elapsed }: { elapsed: number }) {
   return (
-    <div className="space-y-4">
-      <p className="text-sm leading-6 text-foreground">Building the payment and its proof now.</p>
-      <p className="font-mono text-3xl text-foreground tabular-nums">{elapsed}s</p>
-      <p className="text-xs leading-5 text-muted-foreground">
-        {choice === "hide"
-          ? "The proof is real mathematics, and it is what lets the network check the payment without being told anything about it. On this machine that takes about twenty seconds."
-          : "An open payment needs a proof too, because the coins sit in the private pool and leaving it has to be proved. That is why it takes about as long. What changes is what the proof lets stay secret. Here anybody can read the destination and the amount."}
+    <>
+      <p className="gm-amountLabel">Building the payment and its proof</p>
+      <p className="gm-amount">
+        {elapsed}
+        <span className="gm-amountUnit"> SECONDS</span>
       </p>
-      <p className="text-xs leading-5 text-muted-foreground">
-        Please leave this page open. Closing it does not stop the payment, but you would miss seeing
-        it land.
+      <p className="gm-callSub" style={{ marginTop: "auto", paddingTop: 22 }}>
+        Please leave this page open. Closing it does not stop the payment, but you would miss
+        seeing it land.
       </p>
-    </div>
-  );
-}
-
-function Result({
-  index,
-  choice,
-  landed,
-  block,
-  onNext,
-}: {
-  index: number;
-  choice: Branch;
-  landed: boolean;
-  block: number | null;
-  onNext: () => void;
-}) {
-  const round = ROUNDS[index];
-  const good = metGoal(round, choice);
-  const last = index >= ROUNDS.length - 1;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <span
-          className={
-            "rounded-full px-3 py-1 text-xs font-medium " +
-            (good ? "bg-valid/15 text-valid" : "bg-leak/15 text-leak")
-          }
-        >
-          {good ? "That matched the round" : "Not what this round asked for"}
-        </span>
-
-        {landed && block !== null ? (
-          <span className="rounded-full bg-muted px-3 py-1 font-mono text-xs text-foreground">
-            landed in block {block}
-          </span>
-        ) : (
-          <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-            still landing
-          </span>
-        )}
-      </div>
-
-      <Button onClick={onNext} size="lg">
-        {last ? "See how you did" : `Go to round ${index + 2}`}
-      </Button>
-
-      {!landed && (
-        <p className="text-xs leading-5 text-muted-foreground">
-          You do not have to wait for it. The payment is already broadcast and the network will agree
-          on it in its own time. The link above shows the real record either way.
-        </p>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -562,74 +534,49 @@ function Summary({ outcomes, onRestart }: { outcomes: RoundOutcome[]; onRestart:
   const score = scoreGame(outcomes);
 
   return (
-    <div className="space-y-4">
-      <p className="font-display text-xl font-semibold tracking-tight text-foreground">
+    <>
+      <p className="gm-callChoice" style={{ marginBottom: 14 }}>
         {score.passed ? "All three rounds read correctly" : `${score.met} of ${score.total} matched`}
       </p>
 
-      <ul className="space-y-2.5">
+      <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
         {outcomes.map((outcome, index) => {
           const round = ROUNDS[index];
           return (
-            <li
-              key={outcome.txid}
-              className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg border border-border bg-card p-3.5"
-            >
-              <span className="text-sm text-foreground">
-                <span className="text-muted-foreground">{round.label}. </span>
+            <li key={outcome.txid} className="gm-sumRow">
+              <span className="gm-sumTitle">
+                <span className="gm-sumLabel">{round.label}. </span>
                 {round.title}
               </span>
-              <span className="flex items-baseline gap-3">
-                <span className={"text-xs font-medium " + (outcome.metGoal ? "text-valid" : "text-leak")}>
+              <span className="gm-sumMeta">
+                <span className="gm-sumState" data-met={outcome.metGoal}>
                   {outcome.metGoal ? "matched" : "missed"}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  leaked {Math.round(outcome.leak * 100)}%
-                </span>
+                <span>learned {Math.round(outcome.leak * 100)}%</span>
                 {outcome.block !== null ? (
-                  <span className="font-mono text-xs text-muted-foreground">block {outcome.block}</span>
-                ) : (
-                  <a
-                    href={outcome.explorerUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-medium text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary"
-                  >
-                    check it
-                  </a>
-                )}
+                  <span className="gm-mono">block {outcome.block}</span>
+                ) : null}
               </span>
             </li>
           );
         })}
       </ul>
 
-      <p className="text-sm leading-6 text-muted-foreground">{summaryLine(score)}</p>
-
-      <p className="text-sm leading-6 text-foreground">
-        Every payment above is real and stays on the test network for good. That is the part worth
-        sitting with: the hidden ones cannot be read by anyone, and the open ones can be read by
-        everyone, forever.
-      </p>
-
-      <Button onClick={onRestart} size="lg" variant="outline">
-        Play it again
-      </Button>
-    </div>
+      <div
+        className="gm-actions"
+        style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}
+      >
+        <button type="button" className="gm-btnGhost" onClick={onRestart}>
+          Play it again
+        </button>
+      </div>
+    </>
   );
 }
 
 function Notice({ tone, children }: { tone: "wait" | "bad"; children: ReactNode }) {
   return (
-    <p
-      role="status"
-      className={
-        "rounded-lg border p-3.5 text-sm leading-6 " +
-        (tone === "wait"
-          ? "border-border bg-secondary text-foreground"
-          : "border-leak/30 bg-leak/5 text-foreground")
-      }
-    >
+    <p role="status" className="gm-notice" data-tone={tone} style={{ margin: 0 }}>
       {children}
     </p>
   );

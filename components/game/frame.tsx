@@ -1,127 +1,148 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Watcher, type WatcherMood } from "@/components/watcher";
+import { MotionToggle } from "@/components/motion-pref";
 
 /**
- * The shared game frame (A5, D-021). Every game sits inside this one shell so
- * the arcade feels like a single place. Four regions, identical across games:
- *   1. header  — game name (Syne) + the one-line teach.
- *   2. stage   — the scene, with a reserved Watcher slot on the right so the
- *                public is always in the room.
- *   3. explanation panel — plain words for what just happened (Layer 4).
- *   4. leak meter — one bar that fills with exactly what the public learned.
+ * The shared game frame (A5, D-021), rebuilt line for line in the system the
+ * owner approved in the sample (D-044). Every screen wears the same skin:
+ *
+ *   1. banner   — the one-line teach, quiet at the very top.
+ *   2. marquee  — the gold ZARCADE wordmark, the game name in Syne, the round
+ *                 chip and the motion question on the right.
+ *   3. caption  — the teaching prose, ABOVE the stage (D-052): teach first,
+ *                 then show the objects and the choices.
+ *   4. stage    — two panels and a hinge. The left panel holds the moment
+ *                 (the ask, the choices, the waiting clock). The Watcher
+ *                 stands on the divider. The right panel is the running
+ *                 record: what just happened, the pips, the receipts.
  *
  * The frame is PRESENTATIONAL only. Game logic lives in each game (Phase B);
- * it passes its current mood / leak / description down as props.
+ * it passes its current mood, chip, description and receipts down as props.
+ *
+ * There is no red and no green. A lit pip means "on the public list", the same
+ * gold the rest of the site uses for that, never a verdict.
  */
 
-const EASE_CREEP: [number, number, number, number] = [0.65, 0, 0.35, 1];
-const EASE_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+export type FrameReceipt = {
+  /** Shown first, e.g. "Round 1". */
+  label: string;
+  txid: string;
+  block: number | null;
+  url: string;
+};
+
+const LEAK_PARTS = 4;
 
 export function GameFrame({
   title,
   teach,
+  chip,
+  panelLabel,
   watcherMood,
   leak,
   leakLabel,
   description,
+  showLeakMeter = true,
+  receipts = [],
+  caption,
   children,
 }: {
   title: string;
   teach: string;
+  /** Round chip, e.g. ["Round 2 of 3", "Prove you paid"]. */
+  chip: [string, string];
+  /** Eyebrow for the left panel, e.g. "The ask". */
+  panelLabel: string;
   watcherMood: WatcherMood;
   /** 0 = the public learned nothing, 1 = the public learned everything. */
   leak: number;
   leakLabel: string;
   description: string;
+  /** Hide the pip readout (the summary screen shows receipts instead). */
+  showLeakMeter?: boolean;
+  /** Real payments so far, each with its explorer link. */
+  receipts?: FrameReceipt[];
+  /** The teaching prose, below the stage (D-046). Two short paragraphs max. */
+  caption?: ReactNode;
   children: ReactNode;
 }) {
-  const reduced = useReducedMotion();
-  const pct = Math.round(Math.min(1, Math.max(0, leak)) * 100);
+  const litPips = Math.round(Math.min(1, Math.max(0, leak)) * LEAK_PARTS);
 
   return (
-    <main className="relative flex-1 w-full">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(48rem 30rem at 30% 20%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 62%)",
-        }}
-      />
+    <div className="gm-root">
+      <p className="gm-banner">{teach}</p>
 
-      <div className="mx-auto w-full max-w-5xl px-6 py-10 md:py-14">
-        {/* 1. header */}
-        <header className="mb-6 space-y-1.5">
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            {title}
-          </h1>
-          <p className="max-w-prose leading-7 text-muted-foreground">{teach}</p>
-        </header>
-
-        <div className="grid gap-5 md:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)] md:items-stretch">
-          {/* 2. stage + Watcher slot */}
-          <section
-            aria-label="The scene"
-            className="flex flex-col items-center gap-5 rounded-xl border border-border bg-background p-5 md:flex-row"
-          >
-            <div className="w-full flex-1">{children}</div>
-            <div className="shrink-0">
-              <Watcher mood={watcherMood} className="h-40 w-auto md:h-48" />
-            </div>
-          </section>
-
-          {/* 3 + 4. explanation panel + leak meter */}
-          <aside className="flex flex-col gap-4">
-            <div className="rounded-xl border border-border bg-secondary p-4">
-              <p className="text-xs font-medium text-muted-foreground">
-                What just happened
-              </p>
-              <div className="mt-2 min-h-16">
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.p
-                    key={description}
-                    initial={reduced ? { opacity: 1 } : { opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reduced ? { opacity: 1 } : { opacity: 0, y: -4 }}
-                    transition={{ duration: reduced ? 0 : 0.18, ease: EASE_OUT }}
-                    className="text-sm leading-6 text-foreground"
-                  >
-                    {description}
-                  </motion.p>
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-secondary p-4">
-              <p className="text-xs font-medium text-muted-foreground">
-                What the public learned
-              </p>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{ background: "var(--leak)" }}
-                  initial={false}
-                  animate={{ width: `${pct}%`, opacity: pct > 0 ? 1 : 0 }}
-                  transition={
-                    reduced ? { duration: 0 } : { duration: 0.5, ease: EASE_CREEP }
-                  }
-                />
-              </div>
-              <p
-                className={
-                  "mt-2.5 text-sm font-medium " +
-                  (pct > 2 ? "text-leak" : "text-valid")
-                }
-              >
-                {leakLabel}
-              </p>
-            </div>
-          </aside>
+      <header className="gm-marquee">
+        <div className="gm-brand">
+          <span className="gm-wordmark">ZARCADE</span>
+          <span className="gm-brandDiv" aria-hidden="true" />
+          <span className="gm-gameName">{title}</span>
         </div>
-      </div>
-    </main>
+        <div className="gm-marqueeRight">
+          <div className="gm-roundChip">
+            <span>{chip[0]}</span>
+            <span className="gm-chipDiv" aria-hidden="true" />
+            <span className="gm-roundTitle">{chip[1]}</span>
+          </div>
+          <MotionToggle />
+        </div>
+      </header>
+
+      {/* the caption slot (D-046, moved above the stage by D-052): the single
+          teaching place, read before any object or choice */}
+      {caption ? (
+        <section className="gm-caption" aria-label="What this moment means">
+          {caption}
+        </section>
+      ) : null}
+
+      <main className="gm-stage">
+        <section className="gm-panel" aria-label={panelLabel}>
+          <p className="gm-eyebrow">{panelLabel}</p>
+          {children}
+        </section>
+
+        <div className="gm-hinge">
+          <span className="gm-hingeLine" aria-hidden="true" />
+          <Watcher mood={watcherMood} />
+        </div>
+
+        <section className="gm-panel gm-publicPanel" aria-label="The running record">
+          <p className="gm-eyebrow">The running record</p>
+          <p className="gm-recordText">{description}</p>
+
+          {receipts.map((receipt) => (
+            <div className="gm-receipt" key={receipt.txid}>
+              <span>{receipt.label}</span>
+              <span className="gm-receiptDot" aria-hidden="true" />
+              <span className="gm-mono">{`${receipt.txid.slice(0, 8)}…${receipt.txid.slice(-8)}`}</span>
+              <span className="gm-receiptDot" aria-hidden="true" />
+              {receipt.block !== null ? <span>Block {receipt.block}</span> : <span>Not in a block yet</span>}
+              <a
+                className="gm-receiptLink"
+                href={receipt.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Check it on the explorer
+              </a>
+            </div>
+          ))}
+
+          {showLeakMeter && (
+            <div className="gm-readout">
+              <div className="gm-pips" aria-hidden="true">
+                {Array.from({ length: LEAK_PARTS }).map((_, i) => (
+                  <span key={i} className="gm-pip" data-lit={i < litPips} />
+                ))}
+              </div>
+              <p className="gm-readoutText">{leakLabel}</p>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
   );
 }

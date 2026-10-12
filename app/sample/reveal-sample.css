@@ -1,0 +1,876 @@
+/**
+ * Design sample styles (throwaway, owner-review only).
+ *
+ * Global stylesheet, not a CSS module: this project's Turbopack rule forces
+ * every *.css file through @tailwindcss/turbopack with `as: "*.css"`, which
+ * disables CSS-module scoping. Every class and keyframe here is prefixed with
+ * `smp-` so nothing can collide with the real game's styles.
+ *
+ * The palette and layout are the [PROPOSED] visual direction derived from
+ * BRIEF.md:
+ *   - light versus shadow IS the lesson: gold light falls on what the public
+ *     can read, sealed things stay in cool shadow. No red, no green, no
+ *     verdict colours anywhere.
+ *   - two panels, two perspectives (you / the stranger), the Watcher on the
+ *     divider as the hinge.
+ *   - Syne used expressively; mono only for on-chain data.
+ */
+
+.smp-root {
+  --line: rgba(255, 255, 255, 0.08);
+  --ink: #f4efe4;
+  --body: #c8c2d0;
+  --muted: #8b8496;
+  --gold: #edb64a;
+  --gold-bright: #ffcf6e;
+  --panel: #1b1724;
+  --raised: #221d2e;
+  --shadow-side: #a89fc4;
+
+  min-height: 100vh;
+  padding-bottom: 72px;
+  color: var(--body);
+  font-size: 15px;
+  background:
+    radial-gradient(38rem 26rem at 76% 4%, rgba(237, 182, 74, 0.07), transparent 62%),
+    radial-gradient(32rem 22rem at 8% 92%, rgba(124, 92, 205, 0.05), transparent 60%),
+    #141119;
+}
+
+/* ---------- honesty banner ---------- */
+
+.smp-banner {
+  margin: 0;
+  padding: 9px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- marquee header ---------- */
+
+.smp-marquee {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px 24px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.smp-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.smp-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.34em;
+  color: var(--gold);
+}
+
+.smp-brandDiv,
+.smp-chipDiv {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+}
+
+.smp-chipDiv {
+  height: 12px;
+}
+
+.smp-gameName {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+  color: var(--ink);
+}
+
+.smp-roundChip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.smp-roundTitle {
+  color: var(--body);
+  font-weight: 600;
+}
+
+/* ---------- stage: you | hinge | the stranger ---------- */
+
+.smp-stage {
+  max-width: 1120px;
+  margin: 10px auto 0;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px minmax(0, 1.12fr);
+  align-items: stretch;
+}
+
+.smp-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 40px rgba(8, 6, 12, 0.45);
+  overflow: hidden;
+}
+
+.smp-publicPanel {
+  border-color: rgba(237, 182, 74, 0.16);
+}
+
+.smp-publicPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(24rem 14rem at 88% -6%, rgba(237, 182, 74, 0.1), transparent 70%);
+}
+
+.smp-eyebrow {
+  margin: 0 0 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- your side ---------- */
+
+.smp-goalCard {
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+}
+
+.smp-goalLabel {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.smp-goalText {
+  margin: 0;
+  color: var(--body);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.smp-amountLabel {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.smp-amount {
+  margin: 6px 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(38px, 5vw, 52px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.smp-amountUnit {
+  font-size: 0.42em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+
+.smp-amountSub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* The record of the player's decision, written like a note in the margin of a
+   ledger rather than a UI badge: a gold rule, the call in the display face,
+   and the key word lit the same way public facts are lit everywhere else. */
+.smp-callNote {
+  margin-top: auto;
+  padding-top: 22px;
+  display: flex;
+  gap: 14px;
+}
+
+.smp-callRule {
+  flex: 0 0 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--gold-bright), rgba(237, 182, 74, 0.04));
+}
+
+.smp-callBody {
+  min-width: 0;
+}
+
+.smp-callLabel {
+  margin: 0 0 5px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.smp-callChoice {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.smp-callSub {
+  margin: 7px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- the hinge: divider + Watcher ---------- */
+
+.smp-hinge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smp-hingeLine {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  bottom: 6%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.13) 18% 82%, transparent);
+}
+
+.smp-watcher {
+  position: relative;
+  z-index: 1;
+  width: 148px;
+}
+
+.smp-watcher svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: rotate(4deg);
+  transform-origin: 50% 90%;
+  filter: drop-shadow(0 14px 26px rgba(8, 6, 12, 0.6));
+}
+
+.smp-wFloat {
+  animation: smpFloat 6s ease-in-out infinite alternate;
+}
+
+.smp-wGlow {
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  animation: smpFlicker 3.2s ease-in-out infinite;
+}
+
+.smp-watcher[data-flare="true"] .smp-wGlow {
+  opacity: 1;
+  transform: scale(1.14);
+}
+
+.smp-wRim {
+  opacity: 0.7;
+  transition: opacity 0.7s ease;
+}
+
+.smp-watcher[data-flare="true"] .smp-wRim {
+  opacity: 1;
+}
+
+.smp-wEye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: smpBlink 6.5s linear infinite;
+  transition: transform 0.4s ease;
+}
+
+.smp-watcher[data-flare="true"] .smp-wEye {
+  transform: scale(1.1);
+}
+
+.smp-wPupil {
+  animation: smpDrift 9s ease-in-out infinite alternate;
+}
+
+.smp-wFlame {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: smpFlame 2.4s ease-in-out infinite;
+}
+
+.smp-wMote1 {
+  animation: smpMote1 7s ease-in-out infinite;
+}
+
+.smp-wMote2 {
+  animation: smpMote2 9s ease-in-out infinite;
+}
+
+html[data-motion="less"] .smp-wFloat,
+html[data-motion="less"] .smp-wGlow,
+html[data-motion="less"] .smp-wEye,
+html[data-motion="less"] .smp-wPupil,
+html[data-motion="less"] .smp-wFlame,
+html[data-motion="less"] .smp-wMote1,
+html[data-motion="less"] .smp-wMote2 {
+  animation: none;
+}
+
+/* ---------- the public record rows ---------- */
+
+.smp-rows {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.smp-row {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1f1a2b;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.45s ease, background 0.45s ease, box-shadow 0.45s ease;
+}
+
+.smp-row[data-state="lit"] {
+  border-color: rgba(237, 182, 74, 0.35);
+  background: linear-gradient(90deg, rgba(237, 182, 74, 0.08), rgba(237, 182, 74, 0.02) 55%, #1f1a2b);
+  box-shadow: 0 0 24px rgba(237, 182, 74, 0.08);
+}
+
+.smp-row[data-state="lit"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--gold-bright), var(--gold));
+  box-shadow: 0 0 12px rgba(237, 182, 74, 0.7);
+}
+
+.smp-row[data-state="sealed"] {
+  background: #171321;
+  border-color: rgba(150, 140, 190, 0.2);
+}
+
+.smp-rowHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.smp-rowLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.smp-rowTag {
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.4s ease 0.2s;
+  white-space: nowrap;
+}
+
+.smp-rowTag[data-on="true"] {
+  opacity: 1;
+}
+
+.smp-row[data-state="lit"] .smp-rowTag {
+  color: var(--gold-bright);
+}
+
+.smp-row[data-state="sealed"] .smp-rowTag {
+  color: var(--shadow-side);
+}
+
+.smp-rowBody {
+  position: relative;
+  margin-top: 8px;
+  min-height: 46px;
+}
+
+.smp-rowValue {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.smp-row[data-state="lit"] .smp-rowValue {
+  text-shadow: 0 0 18px rgba(237, 182, 74, 0.35);
+}
+
+.smp-rowSub {
+  display: block;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.smp-sealBar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: linear-gradient(#211b2e, #1a1526);
+  border: 1px solid rgba(160, 148, 200, 0.24);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #b6add1;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.smp-sealBar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 178, 235, 0.75), transparent);
+  opacity: 0.3;
+}
+
+.smp-row[data-state="sealed"] .smp-sealBar {
+  animation: smpSettle 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smp-row[data-state="sealed"] .smp-sealBar::after {
+  animation: smpSeamFlash 1.1s ease-out;
+}
+
+/* the shutter that hides each answer until the record is read */
+.smp-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: linear-gradient(#251f33, #211b2d);
+  color: rgba(200, 194, 208, 0.4);
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smp-coverSeam {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.smp-row[data-state="lit"] .smp-cover,
+.smp-row[data-state="sealed"] .smp-cover,
+.smp-row[data-state="none"] .smp-cover {
+  transform: translateX(103%);
+}
+
+/* ---------- leak readout + receipt ---------- */
+
+.smp-readout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.smp-pips {
+  display: flex;
+  gap: 6px;
+}
+
+.smp-pip {
+  width: 28px;
+  height: 6px;
+  border-radius: 3px;
+  background: #2c2738;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.smp-pip[data-lit="true"] {
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  box-shadow: 0 0 10px rgba(237, 182, 74, 0.5);
+}
+
+.smp-readoutText {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--body);
+}
+
+.smp-readoutText strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.smp-receipt {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  position: relative;
+  z-index: 1;
+}
+
+.smp-mono {
+  font-family: var(--font-mono);
+}
+
+.smp-receiptDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.smp-receiptLink {
+  margin-left: auto;
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.smp-receiptLink:hover {
+  color: var(--gold-bright);
+}
+
+/* ---------- the twist caption (single teaching place) ---------- */
+
+.smp-caption {
+  max-width: 1120px;
+  margin: 34px auto 0;
+  padding: 0 24px;
+}
+
+.smp-twist {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smp-twist[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.smp-litWord {
+  color: var(--gold-bright);
+  text-shadow: 0 0 22px rgba(237, 182, 74, 0.45);
+}
+
+.smp-shadowWord {
+  color: var(--shadow-side);
+}
+
+.smp-teach {
+  max-width: 640px;
+  margin: 14px 0 0;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--body);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.6s ease 0.15s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+}
+
+.smp-teach[data-on="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- actions ---------- */
+
+.smp-actions {
+  max-width: 1120px;
+  margin: 28px auto 0;
+  padding: 0 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.smp-btnPrimary {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: #241a05;
+  background: linear-gradient(#f6c45e, #edb64a);
+  border: 1px solid var(--gold-bright);
+  border-radius: 10px;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow:
+    0 0 28px rgba(237, 182, 74, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.14s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.smp-btnPrimary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    0 0 36px rgba(237, 182, 74, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.smp-btnPrimary:active {
+  transform: translateY(1px);
+  box-shadow: 0 0 16px rgba(237, 182, 74, 0.25);
+}
+
+.smp-btnGhost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--body);
+  border-radius: 10px;
+  padding: 14px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.smp-btnGhost:hover {
+  border-color: rgba(237, 182, 74, 0.45);
+  color: var(--ink);
+}
+
+.smp-btnPrimary:focus-visible,
+.smp-btnGhost:focus-visible,
+.smp-receiptLink:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- keyframes ---------- */
+
+@keyframes smpFloat {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes smpBlink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.06);
+  }
+  97.5% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes smpDrift {
+  from {
+    transform: translateX(-1.5px);
+  }
+  to {
+    transform: translateX(1.5px);
+  }
+}
+
+@keyframes smpFlicker {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  45% {
+    opacity: 0.82;
+  }
+  70% {
+    opacity: 0.64;
+  }
+}
+
+@keyframes smpFlame {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.12, 0.94);
+    opacity: 1;
+  }
+}
+
+@keyframes smpMote1 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(-10px, -34px);
+    opacity: 0;
+  }
+}
+
+@keyframes smpMote2 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(8px, -44px);
+    opacity: 0;
+  }
+}
+
+@keyframes smpSettle {
+  0% {
+    transform: scale(1.05);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(0.995);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes smpSeamFlash {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* ---------- mobile: same order, one column, hinge stays the hinge ---------- */
+
+@media (max-width: 920px) {
+  .smp-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .smp-hinge {
+    height: 132px;
+  }
+
+  .smp-hingeLine {
+    left: 8%;
+    right: 8%;
+    top: 50%;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.13) 18% 82%, transparent);
+  }
+
+  .smp-watcher {
+    width: 112px;
+  }
+
+  .smp-marquee {
+    justify-content: center;
+  }
+
+  .smp-receiptLink {
+    margin-left: 0;
+  }
+}
+
+/* ---------- reduced motion: everything lands at once, lesson still reads ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .smp-root *,
+  .smp-root *::before,
+  .smp-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

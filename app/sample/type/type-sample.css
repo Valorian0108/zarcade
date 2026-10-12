@@ -1,0 +1,163 @@
+/**
+ * Throwaway type specimen for the prose-voice decision (candidate D-047).
+ * Every class is prefixed `ts-`. The specimen itself wears the real game
+ * system: the panels reuse `gm-` classes from components/game/game.css, so
+ * each direction shows the actual copy in the actual composition. Only the
+ * prose family changes per direction. Page chrome (headers, notes) stays in
+ * the neutral default face on purpose, so it cannot bias the pick.
+ */
+
+.ts-page {
+  min-height: 100vh;
+  padding: 48px 0 80px;
+  background: #100d14;
+  color: #c8c2d0;
+}
+
+/* ---------- page chrome (neutral, not part of the specimen) ---------- */
+
+.ts-pageHead {
+  max-width: 1120px;
+  margin: 0 auto 44px;
+  padding: 0 24px;
+}
+
+.ts-pageTitle {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #f4efe4;
+}
+
+.ts-pageIntro {
+  max-width: 660px;
+  margin: 0 0 20px;
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+
+.ts-constants {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 13px;
+  color: #8b8496;
+}
+
+.ts-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c8c2d0;
+}
+
+/* ---------- one direction card ---------- */
+
+/* Each direction is its own .gm-root world (tokens + backdrop) shrunk to a
+   card, so the panels inside behave exactly like the real game. */
+.ts-dir {
+  max-width: 1120px;
+  min-height: 0;
+  margin: 0 auto 48px;
+  padding: 30px 24px 40px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+}
+
+.ts-head {
+  margin-bottom: 30px;
+}
+
+.ts-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #edb64a;
+}
+
+.ts-name {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.15;
+  color: #f4efe4;
+}
+
+.ts-why {
+  max-width: 660px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #c8c2d0;
+}
+
+/* ---------- the specimen stage (mirrors gm-stage, no hinge) ---------- */
+
+.ts-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 860px) {
+  .ts-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* the caption slot loses its page-level margins inside the card */
+.ts-dir .gm-caption {
+  max-width: none;
+  margin: 26px 0 0;
+  padding: 0;
+}
+
+/* ---------- the three prose voices ---------- */
+
+.ts-dir[data-dir="1"] {
+  font-family: var(--ts-serif);
+}
+
+.ts-dir[data-dir="2"] {
+  font-family: var(--ts-grotesk);
+}
+
+.ts-dir[data-dir="3"] {
+  font-family: var(--font-display);
+}
+
+/* A warm serif needs a touch more size and air on a dark ground. */
+.ts-dir[data-dir="1"] .gm-prose,
+.ts-dir[data-dir="1"] .gm-teach,
+.ts-dir[data-dir="1"] .gm-recordText,
+.ts-dir[data-dir="1"] .gm-goalText,
+.ts-dir[data-dir="1"] .gm-notice {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* Syne is drawn for display. For paragraphs it gets lighter weight, a bigger
+   size and wider spacing, which is the honest way to do "all Syne". */
+.ts-dir[data-dir="3"] .gm-prose,
+.ts-dir[data-dir="3"] .gm-teach,
+.ts-dir[data-dir="3"] .gm-recordText,
+.ts-dir[data-dir="3"] .gm-goalText,
+.ts-dir[data-dir="3"] .gm-notice {
+  font-size: 16px;
+  line-height: 1.8;
+  font-weight: 500;
+  letter-spacing: 0.012em;
+}

@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { Hub } from "@/components/hub/hub";
+import { MotionPrefProvider } from "@/components/motion-pref";
+import { Door } from "@/components/hub/door";
 
 export const metadata: Metadata = {
   description:
-    "A small arcade that teaches how Zcash keeps payments private. Each game shows one idea by letting you play it.",
+    "An arcade that teaches Zcash. Every machine is a small game about one privacy feature, played with real practice money on the Zcash test network.",
 };
 
 export default function HomePage() {
-  return <Hub />;
+  return (
+    <MotionPrefProvider>
+      <Door />
+    </MotionPrefProvider>
+  );
 }

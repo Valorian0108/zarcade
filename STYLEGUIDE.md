@@ -183,3 +183,125 @@ the Syne font swap (D-017).
 The game still teaches the real ideas: shielded pool, proof, public chain. It
 just refuses to make the reader feel stupid while doing it. Plain words carry
 a hard idea further than fancy words carry an easy one.
+
+## Layer 5 — The reveal system (light vs. shadow) · APPROVED (D-044) — applied to the real game and validated by the owner on live testnet payments, 2026-10-12
+
+### Amendment 3 (D-046, approved 2026-10-12): the slot grammar
+
+The sample is one composed moment with fixed content. The game screens are flows
+with variable content (notices, errors, a locked round). This amendment is the
+rule that lets flow screens wear the sample's composition without clustering:
+
+- **Panels hold objects, never prose.** Left panel slots, top to bottom:
+  eyebrow, then the display line and at most one card in whichever order the
+  moment needs (the sample puts the card first when the big number is the
+  star), open space, bottom anchor (the button or the decision note). The
+  open space is structural, not leftover: it is what makes a panel feel
+  composed.
+- **Conditional objects** (refill notice, send error) enter between the card
+  and the anchor, styled as cards, only when true. They are state, not prose.
+- **Right panel slots:** eyebrow, one status sentence, open space, receipts,
+  then pips and readout anchored to the bottom.
+- **Prose lives below the stage** in the caption slot, in the big teach voice,
+  two short paragraphs maximum. This is the single teaching place on every
+  screen except the reveal, where the twist caption already holds it.
+- **Three text weights per panel, never more:** display, object, micro.
+- A screen that needs a new slot changes this spec first, in writing, not in
+  code.
+
+> Proven in the throwaway sample at `/sample` and approved by the owner
+> ("this is brilliance", 2026-10-12). This layer is the visual system that
+> carries BRIEF.md's one idea into pixels. It becomes APPROVED when the owner
+> lifts the sample-only restriction and it is applied to the real game.
+
+### The one rule
+
+Light versus shadow IS the lesson. Gold light falls on what the public can
+read. Cool shadow holds what is sealed. There is no third state and no verdict
+colour: nothing is ever red or green, and nothing is ever coloured to say
+"good" or "bad." Meaning comes from covered versus revealed, and from the
+Watcher's reaction, never from a traffic-light colour.
+
+### Palette (scoped values from the sample)
+
+- Base `#141119` with two motivated glows: a faint gold radial from the
+  lantern side (top-right), a faint violet radial bottom-left. Not a flat
+  poster; the light has a source.
+- Panel `#1b1724`, raised surface `#221d2e`, hairline `rgba(255,255,255,0.08)`.
+- Ink `#f4efe4`, body `#c8c2d0`, muted `#8b8496`.
+- Gold `#edb64a`, gold-bright `#ffcf6e` (the "lit / public / look here" colour).
+- Shadow-side `#a89fc4` (the "sealed / private" colour, cool and receding).
+
+### Layout: two panels, one hinge
+
+The reveal screen is two perspectives side by side. Left = your side (the goal,
+the amount, your decision). Right = what a stranger can see (the four facts the
+chain records). Between them, on a vertical hairline, sits the Watcher as the
+hinge: it is the public personified, and it leans toward whichever side the
+record lights up. On narrow screens the panels stack in the same order and the
+hinge becomes a horizontal line; the Watcher stays the hinge.
+
+Amended by D-048 (approved 2026-10-12): **the left panel is the wide panel.**
+The stage split is `1.3fr : 170px : 1fr`. The left box carries the sentences
+players read, so it gets the comfortable measure (near 60 characters a line at
+full width); the right panel keeps roughly the width the owner approved for the
+reveal rows. One rule in the shared frame, inherited by every screen and every
+future game.
+
+### The Watcher
+
+A hooded sentinel with one gold eye and a lantern on its arm. The lantern is
+its job made visible: it lights what the public can read. It idles (slow float,
+blink, flame flicker, two drifting motes) and it reacts: when the record starts
+lighting up, the lantern flares and the eye widens. Custom vector, part of the
+D-010 cast. It never judges with colour; it only watches and lights.
+
+### The seal
+
+The choice and the sealed facts use one mark: a wax seal. Pressed and intact =
+sealed (cool shadow, filled). Never pressed, ring broken open at the top with a
+speck of light in the gap = open (gold). The same mark scales from the small
+decision note to the "Sealed by the private pool" bar. No lock emoji, no
+off-the-shelf icon.
+
+### Type · amended by D-047 (approved 2026-10-12): the two voices
+
+- **Voice 1, Syne (display):** everything you act on or stare at. The big
+  amount, the decision, the twist line, titles, the intro list, primary
+  buttons. Used expressively. The twist line gets the largest Syne on screen,
+  with the public word lit gold and the hidden word in cool shadow.
+- **Voice 2, Space Grotesk (prose):** every sentence that talks to the player.
+  Teaching captions, round briefs, status lines, card text, notices. The prose
+  keeps the cabinet's techy energy, cut from the same machine as the titles.
+  Picked by the owner on the /sample/type specimen (Direction 2), first as
+  Newsreader (D-047) and then flipped to the grotesk (D-049). Worn at the
+  system's default prose sizes; the serif-era 16px/1.7 tuning was reverted.
+- **Mono (Geist Mono):** reserved strictly for on-chain data (addresses,
+  amounts on the public list, the transaction id).
+- **Banned:** Geist Sans, the Next.js framework default. It was never chosen,
+  only inherited, and the owner spotted exactly that. No screen of the arcade
+  may fall back to an unchosen voice.
+
+### The reveal is the climax
+
+The four public rows start shuttered. They open one at a time on a short
+staggered schedule; sealed rows settle with a seam flash, lit rows slide open
+and catch a gold left edge. The leak readout (pips) fills as facts become
+public. The Watcher flares when the record lights. The twist line and its
+teaching paragraph land last. Nothing decorative competes with the moment a
+real, checkable on-chain fact appears.
+
+### Reduced motion
+
+Under `prefers-reduced-motion`, the final state renders immediately: every
+shutter is open, the twist line is shown, the Watcher holds still. The lesson
+reads fully without any animation. (Keep versus remove is still an open owner
+decision; this layer assumes keep.)
+
+### What this layer forbids
+
+- Any red or green, or any colour used as a verdict.
+- Any generic UI badge (pill chip with icon + label) standing in for a decision
+  or a fact. Decisions are margin notes; facts are rows.
+- Any emoji or off-the-shelf icon set.
+- Spectacle that does not point at a real on-chain fact.

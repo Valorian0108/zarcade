@@ -213,10 +213,82 @@
       during a real refill, and verified to return to full figures afterwards. What
       is left for B5 is the screen: a distinct state that says the arcade is
       refilling.
+    - **UPDATE 2026-10-12 (B5 DONE):** all three rounds built and verified with
+      real testnet payments, including the round-3 open-only lock, the landing
+      beat via `readPaymentProgress`, and the summary screen. 76 tests, all
+      gates green. Owner gameplay approval queued.
+    - **UPDATE 2026-10-12 (Layer 5 applied, D-044/D-045):** the owner-approved
+      sample look was carried into the real game. The paid phase now belongs to
+      a dedicated Reveal: two panels (your side / the stranger) with the
+      redesigned Watcher on the hinge, shuttered rows that read out one at a
+      time, gold pips instead of the red leak meter, the decision written as a
+      margin note, and the twist line landing last with a light sweep. No red
+      or green remains anywhere; `--valid`/`--leak` were repointed to the
+      meaning colours. Motion level is now a choice the page offers
+      (`components/motion-pref.tsx`, "Motion: more / less", remembered, OS
+      `prefers-reduced-motion` as the starting default). The summary-screen
+      meter bug ("Nothing yet" after three real payments) is fixed by hiding
+      the per-payment readout there. Gates green: typecheck, lint, 76 tests,
+      production build. Owner visual approval of the real reveal queued (needs
+      one played round).
+    - **UPDATE 2026-10-12 (same day, frame rebuilt):** the owner compared
+      `/games/unseen` with `/sample` side by side and called the difference
+      correctly: the reveal had the approved look but the other four screens
+      were still the old generic shell in new colours. The frame itself was
+      then rebuilt in the sample's system, ported line for line into
+      `components/game/game.css` (`gm-` prefix): marquee with the gold
+      wordmark and round chip, two panels with the Watcher on the hinge on
+      EVERY screen, the sample's card treatment, chunky glowing pips, gold
+      gradient buttons, the twist caption, and the same glows. The Watcher and
+      the motion toggle were moved onto the same stylesheet, so the hub and
+      the preview wear it too. Gates green again: typecheck, lint, 76 tests,
+      production build. Computed styles verified equal to the sample's spec
+      (wordmark gold and tracking, 16px panel radius, 170px hinge column,
+      28x6 pips, gold gradient buttons).
+    - **UPDATE 2026-10-12 (slot grammar, D-046):** the owner then found the
+      flow screens clustered: prose paragraphs had been left inside the left
+      panel, which the sample never does. Logged and applied the slot grammar:
+      panels hold objects only (eyebrow, one display line, at most one card,
+      open space, bottom anchor), conditional notices sit between card and
+      anchor, the record panel holds one status sentence plus receipts plus
+      the pip anchor, and all teaching prose moved to a caption slot below the
+      stage. Audited state by state in code (intro calm and refilling, brief
+      normal, error and locked, sending, summary) plus a live DOM check of the
+      intro: no prose inside any panel, caption below the stage, anchors
+      pinned. Gates green: typecheck, lint, 76 tests, production build.
+    - **UPDATE 2026-10-12 (prose voice, D-047):** the owner then caught that
+      the intro list had character (Syne) while every other sentence was the
+      framework default nobody chose. Built the /sample/type specimen (three
+      directions on the real game copy: Newsreader, Space Grotesk, tuned
+      all-Syne); owner picked Direction 1. Applied everywhere: Newsreader
+      loaded in the root layout as --font-prose and mapped to font-sans,
+      Geist Sans removed from the app, prose classes tuned to 16px/1.7 in
+      game.css and the sample, specimen page kept as the record.
+    - **UPDATE 2026-10-12 (wide left panel, D-048 + voice flip, D-049):** the
+      owner found the intro clustered and traced it to the "About the money"
+      card: a normal-length message in a 278px text column. Their proposal was
+      taken: leave every object where it is and widen the box that carries
+      them. The stage split flipped to 1.3fr : 170px : 1fr, one rule in the
+      shared frame, so all screens and future games inherit it. Then the owner
+      flipped the prose voice from Newsreader to Space Grotesk (specimen
+      Direction 2); the serif-era size tuning was reverted to the defaults the
+      direction was judged at. Machine-verified after: prose family, panel
+      widths, card text column, display and mono constants. Owner confirmed
+      the applied result visually the same day ("yeah this is better"): the
+      intro clustering complaint is closed.
 - Definition of done: playing Unseen on localhost produces at least one REAL
   shielded testnet tx, verifiable on the explorer; both branches (hide / leave
   open) work; all gates green; owner approves the gameplay.
-- Status: **B1 DONE, B2 DONE, B3 DONE, B4 DONE, B4.5 DONE, B4.6 DONE; B5 next (2026-10-12)** — D-024/D-025/D-026
+- Status: **B1–B5 DONE. Definition of done completed 2026-10-12: the owner
+  played live rounds with the sidecar running and approved the real reveal
+  ("dope i love this").** Owner-session payments, all real on the NU7 testnet:
+  `ea3a0a094734fe92aaa17d25c864d0cd3a15fdf61e6be0fe63e15b542718059f` and
+  `a2efb60c6eef3370de7c4ef5fde43a78e96976469ade457dfa7e46a3263efd24` (block
+  4,492,119), `d914815afe6cf2dbc9af61b6cbdc263cd392da8f2311beb87fe106bbe6fa067f`
+  (block 4,492,127), `e38db5048a17cd83385f936c13da0dc4d39bdfbd0d03191763ad80c4dc183b16`
+  (broadcast, landing during verification). House wallet spent 54,000 zat
+  including fees across the session and stayed readyForRound throughout.
+  — D-024/D-025/D-026
   clicked; RESEARCH D+E filled and corrected (endpoint research: zec.rocks).
   Windows toolchain: VS Build Tools 2022 (C++ workload) + Rust stable 1.99.0
   (rustup, minimal profile via TUNA mirror; WSL2 ruled out, virtualization
@@ -270,6 +342,55 @@
   was the difference between a working pot and an unspendable one (D-033, D-034,
   RESEARCH I5 and I7). Gates green: typecheck, lint, 34 tests, production build
   with both API routes still correctly dynamic. Next: **B5**.
+  **UPDATE 2026-10-12 (B6 front door + floor, D-050):** the three-room flow is
+  built. `/` is now the entrance (ZARCADE sign with one neon flicker and one
+  gold sweep, two prose lines, the Watcher's eye opens with a single lantern
+  flare, "Step inside" ignites into a slow attract pulse; ~2s landing, then
+  quiet). The hub moved to `/arcade` and was restyled into the gm- system:
+  cabinets fade in on a stagger, Unseen rises last and ignites, dark cabinets
+  stay inert, the row ends with "One machine is live. The others come later."
+  `/games/unseen` unchanged. Beat sheet machine-verified in the browser
+  (animation names and delays, fonts, lit and shadow states, press-to-navigate,
+  copy). Gates green: typecheck, lint, 76 tests, production build with `/` and
+  `/arcade` static. **Self-audit then found a real pre-existing bug:** React 19
+  does not patch attribute mismatches at hydration ("This won't be patched up"),
+  so a saved "less" motion choice never reaches the DOM on a fresh load:
+  `data-reduced` stays `"false"` and the CSS plays full motion. Reproduced in
+  the production build, not dev-only; the earlier note calling the hydration
+  warning harmless was wrong. Fix per the shipped Next.js guide
+  (preventing-flash-before-hydration): an inline script applies the choice to
+  `<html>` before first paint. Logged as D-051 and applied (next update).
+  **UPDATE 2026-10-12 (D-051, D-052, D-053 applied):** the motion fix plus all
+  six owner feedback points, in one pass.
+  - D-051: inline script in `<head>` sets `data-motion` (and `data-pref` when
+    saved) on `<html>` before first paint; a second inline script in the toggle
+    sets `aria-pressed` during parsing; `suppressHydrationWarning` on `<html>`
+    and the toggle buttons; all CSS keys off `html[data-motion="less"]` and
+    `html[data-pref]`; `data-reduced` removed from every component; `setPref`
+    syncs the `<html>` attributes so clicks apply without a reload. Machine
+    verified both ways: saved "less" fresh-loads to `data-motion="less"` with
+    Less pressed before any interaction, mood skipping straight to calm, and
+    zero console errors (the hydration error is gone); no saved choice loads
+    "more" with `data-pref` absent, the full beat sheet intact (flicker 0.4s,
+    sweep 0.95s, glow 1.5s, blind to calm), nothing pressed, zero errors.
+  - D-052: caption slot now sits above the stage on every screen; spacing
+    rebalanced (caption 6px under the marquee, stage 18px under the caption).
+  - D-053: sign sizes by its column (`clamp(18px, 10cqi, 80px)`, container
+    `.gm-doorSide`); measured "ZARCADE" at 9.43em wide, so the sign always
+    takes 94% of its box and can never slide under the Watcher again (owner's
+    616px column gets a 61.6px sign). Amount sizes by its panel
+    (`clamp(24px, 12cqi, 44px)`, container `.gm-panel`); measured text ratio
+    7.02em, so it takes at most 84% of the panel and cannot touch the box.
+    Watcher: viewBox widened 200 to 224 so the lantern glow circle (cx 169,
+    r 52) is whole, killing the rectangular light band; blind lid redrawn with
+    the hood's own curve path instead of the square rect, so a closed hood
+    reads dark and empty, never as a black box.
+  - Gates green: typecheck, lint, 76 tests, production build, `/` and
+    `/arcade` still static.
+  - Owner reported "can't see the Watcher" mid-pass. Machine probes found it
+    present and visible in all three rooms (opacity 1, correct sizes, clean
+    console in both motion modes); likely a stale dev tab after ~20 rapid hot
+    reloads. Owner asked to hard-reload and confirm.
 
 ## Phase 3 — _(to be defined)_
 - Goal:
