@@ -400,6 +400,16 @@
 ## Phase N — Polish + hackathon submission
 - Goal: demo video, writeup, docs, submission
 - Definition of done: submission package complete
+  **UPDATE 2026-10-12 (D-054, first submission artifact):** the public README
+  was rewritten per README-PLAN.md. The internal pieces moved out:
+  OPERATING.md (run steps, pot split, troubleshooting), AGREEMENT.md (the
+  accountability agreement + document map), LICENSE (MIT, owner said pick
+  now). The README carries the real facts: the two mined testnet txids with
+  explorer labels, a mermaid money path, three collapsible field notes, the
+  hide-versus-open table, measured numbers, a live /api/house/status block.
+  Pending: three screenshots from the owner's window (assets/SHOTS-NEEDED.md
+  lists them); optional round gif only if time allows. Docs only, no code
+  touched, gates unaffected.
 
 ---
 
