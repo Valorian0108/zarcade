@@ -573,8 +573,22 @@
   - Cabinet two: The Crowd. No new backend; reuses the send route and
     GameFrame; three challenges with real arcade records; the second
     challenge is impossible by design, and that is the lesson.
-    Scoping decision D-074 written 2026-10-13, AWAITING OWNER APPROVAL
-    before any build.
+    Scoping decision D-074 written 2026-10-13, APPROVED by owner same day
+    with two standing rules: raise anything that needs his intervention
+    instead of building blindly, and build it as a test first. D-075 logs
+    the test-first shape: route live, cabinet dark, status flip after his
+    playtest.
+    Test build shipped the same day: /games/crowd is live while the
+    cabinet stays dark (no lib/games.ts entry yet). The book is three
+    verified records: 952a1959 (block 4,488,884), 27205300 (mined the
+    day of the build, block 4,498,206), c97af953 (the D-041 open
+    round). Four gates green (87 tests, 14 routes) and a full machine
+    playthrough of all eight states with zero console errors. D-076
+    logs the two amendments the real book forced: C3 became a
+    why-question on the open row, C2 names the live 1,000-zatoshi
+    constant. PENDING: owner playtest and eyeball on the hood art and
+    the searchlight, then the go-live flip (crowd entry added, status
+    playable, three-hoods glyph).
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
     no wallet changes.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
