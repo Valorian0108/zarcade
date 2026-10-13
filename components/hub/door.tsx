@@ -6,6 +6,34 @@ import { MotionToggle, useMotionPref } from "@/components/motion-pref";
 import { Watcher, type WatcherMood } from "@/components/watcher";
 
 /**
+ * D-073: a hot reload swaps new code into an open tab without a full page
+ * reload, but an effect whose deps did not change does not re-run, so a tab
+ * left open across deploys kept the peek measure closure it was born with
+ * and peeked with a translate measured from a layout that no longer exists:
+ * the watcher came out all the way instead of hiding at the edge (owner:
+ * "the peking watcher is coming out al the way tio peek its meant to hide
+ * with just itsface visiblr"). This counter lives on window and increments
+ * on every evaluation of this module, hot or cold, so every code swap
+ * changes the peek effect's deps and the effect re-runs and re-measures. An
+ * open tab now heals itself on the very push that changed the code, with no
+ * reload asked of the owner.
+ */
+const doorModuleEpoch = (() => {
+  if (typeof window === "undefined") return 0;
+  const w = window as Window & { __zarcadeDoorEpoch?: number };
+  w.__zarcadeDoorEpoch = (w.__zarcadeDoorEpoch ?? 0) + 1;
+  return w.__zarcadeDoorEpoch;
+})();
+
+// D-069's tuned pair, named by D-073 so "hide more" or "hide less" is a
+// one-number edit: the fraction of the figure's width that stays offscreen
+// at the peek hold, and the diagonal lean that swings the eye around the
+// corner into the visible sliver. The two are tuned together by machine
+// check: more hidden or less lean and the eye itself clips the screen edge.
+const PEEK_HIDDEN_FRACTION = 0.56;
+const PEEK_LEAN_DEG = 16;
+
+/**
  * The front door (D-050). Its only jobs: say the name, say what the place is
  * in a human voice, make the visitor feel watched, and offer ONE way in.
  *
@@ -60,23 +88,22 @@ export function Door() {
     };
   }, [reduced]);
 
-  // D-055, restaged by D-069, hardened by D-071: measure the resting spot,
-  // and re-measure whenever the layout can breathe: on resize, on window
-  // load, when the webfonts settle, and once per story cycle via the
-  // watcher's animationiteration. The cycle re-measure is the important
-  // one: the owner kept a tab open across a deploy that moved the scene
-  // (D-070) without firing resize, so the peek kept a stale translate and
-  // stopped mid-page fully visible instead of clipped at the edge. A peek
-  // variable may never outlive the layout it was measured from. The hidden
-  // fraction is 56%: most of the body stays out of view, because that is
-  // what a peek is. The eye sits at ~46% of the figure's width, inside the
-  // hidden zone at that fraction, so the peek leans: the 16deg diagonal
-  // tilt written to --peekTilt below swings the head and eye around the
-  // corner into the visible sliver, hood first, like somebody craning
-  // around a doorframe. The fraction and the angle are tuned together by
-  // machine check: more hidden or less lean and the eye itself clips the
-  // screen edge. The machine check measures the eye's screen position
-  // during the peek and fails if it is offscreen.
+  // D-055, restaged by D-069, hardened by D-071 and D-073: measure the
+  // resting spot, and re-measure whenever the layout can breathe: on
+  // resize, on window load, when the webfonts settle, when the tab becomes
+  // visible again, and once per story cycle via the watcher's
+  // animationiteration. D-071 added those triggers after a deploy moved the
+  // scene without firing resize. D-073 adds the epoch dep below after the
+  // owner's open tab proved that triggers inside an effect are useless when
+  // the effect itself never re-runs, which is exactly what a hot reload does
+  // to an effect whose deps did not change. A peek variable may never
+  // outlive the layout it was measured from, and a peek closure may never
+  // outlive the code that defined it. The hidden fraction and the lean are
+  // the named constants at the top of this file: most of the body stays out
+  // of view, because that is what a peek is, and the lean swings the head
+  // and eye around the corner into the visible sliver, hood first, like
+  // somebody craning around a doorframe. The machine check measures the
+  // eye's screen position during the peek and fails if it is offscreen.
   useEffect(() => {
     if (reduced) return;
     const el = storyRef.current;
@@ -87,27 +114,41 @@ export function Door() {
       const toLeft = r.left;
       const toRight = window.innerWidth - r.right;
       const fromLeft = toLeft <= toRight;
-      const hidden = r.width * 0.56;
+      const hidden = r.width * PEEK_HIDDEN_FRACTION;
       const peek = fromLeft ? -(toLeft + hidden) : toRight + hidden;
       const full = fromLeft ? -(toLeft + r.width + 80) : toRight + r.width + 80;
       el.style.setProperty("--peekX", `${Math.round(peek)}px`);
       el.style.setProperty("--peekFull", `${Math.round(full)}px`);
       // The diagonal lean: most of him stays hidden, the eye cranes in.
-      el.style.setProperty("--peekTilt", fromLeft ? "16deg" : "-16deg");
+      el.style.setProperty(
+        "--peekTilt",
+        fromLeft ? `${PEEK_LEAN_DEG}deg` : `-${PEEK_LEAN_DEG}deg`,
+      );
     };
     measure();
     const watcherEl = el.querySelector(".gm-watcher");
     const fontsReady = document.fonts ? document.fonts.ready.then(measure, () => {}) : null;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") measure();
+    };
     window.addEventListener("resize", measure);
     window.addEventListener("load", measure);
+    document.addEventListener("visibilitychange", onVisible);
     watcherEl?.addEventListener("animationiteration", measure);
     return () => {
       window.removeEventListener("resize", measure);
       window.removeEventListener("load", measure);
+      document.removeEventListener("visibilitychange", onVisible);
       watcherEl?.removeEventListener("animationiteration", measure);
       if (fontsReady) fontsReady.catch(() => {});
     };
-  }, [reduced]);
+    // D-073: the epoch dep is intentional. The lint rule assumes an
+    // outer-scope value never changes between renders, which is true within
+    // one module instance and false across a hot reload: the module
+    // re-evaluates, the epoch increments, Fast Refresh re-renders with the
+    // new value, and this dep is the only thing that makes the effect
+    // re-run and re-measure in a tab that never reloaded.
+  }, [reduced, doorModuleEpoch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function enter() {
     if (reduced) {

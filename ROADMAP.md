@@ -517,7 +517,20 @@
      the text block, and being named it makes any future nudge a single
      edit. Measured 40.1px below the title top on wide; anchors and every
      beat unchanged; phones untouched. Gates green; after capture taken.
-     DONE, pending owner eyeball.
+     DONE, owner approved with one word: BETTER.
+   - D-073 a peek closure can no longer outlive its code (owner screenshot:
+     the peeking watcher came out all the way mid-page instead of hiding at
+     the edge). Hot reload swaps code into an open tab without re-running
+     effects whose deps did not change, so his tab kept the peek closure
+     born with the old layout. A module epoch on window, incremented per
+     evaluation, now sits in the effect deps: every push re-runs the
+     measure and an open tab heals itself with no reload. Added a
+     visibilitychange re-measure guarded on visible. D-069's pair are named
+     constants now (PEEK_HIDDEN_FRACTION 0.56, PEEK_LEAN_DEG 16) so hiding
+     more or less is a one-number edit. Verified: epoch 1 on fresh load,
+     peek pinned 84.4 offscreen with eye onscreen, cycle heal passes,
+     visibility guard inert while hidden. Gates green. DONE, pending owner
+     eyeball on the next peek in his open tab.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
