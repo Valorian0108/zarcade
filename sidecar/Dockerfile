@@ -33,5 +33,7 @@ COPY --from=builder /build/target/release/zarcade-sidecar /usr/local/bin/zarcade
 # dashboard instead, at the same path this variable points to.
 ENV ZARCADE_DATA_DIR=/data
 
-EXPOSE 9070
+# The rented home pins PORT=8080 (D-083), so that is the port the
+# sidecar listens on there.  Local runs, which set no PORT, stay on 9070.
+EXPOSE 8080
 CMD ["zarcade-sidecar"]

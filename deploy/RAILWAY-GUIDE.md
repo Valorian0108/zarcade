@@ -91,7 +91,15 @@ the pot without it.
    Railway's private network can route traffic to it.  On your local
    machine it stays on `127.0.0.1`.)
 
-4. **Deploy** the sidecar: go back to the service overview and click
+4. Add one more variable:
+   - **Name**: `PORT`
+   - **Value**: `8080`
+
+   Railway injects a `PORT` variable of its own and defaults it to 8080.
+   Declaring it by hand pins the number in place, so the same 8080 shows
+   up in three spots and they can never drift apart.
+
+5. **Deploy** the sidecar: go back to the service overview and click
    **Deploy** (or just wait — Railway auto-deploys when env vars change).
 
 ### Verify the sidecar works
@@ -100,9 +108,12 @@ The sidecar will now be running on the private network.  Let's give it a
 temporary public domain so you can test it from your PC.
 
 1. In the **sidecar** service → **Settings** → **Networking**.
-2. Click **Generate Domain**.  Railway gives you a URL like
-   `zarcade-sidecar.up.railway.app`.  Copy it — you will remove it after
-   setup is done.
+2. Click **Generate Domain**.
+   - If Railway asks for a **port**, type `8080`.  That is the number the
+     sidecar listens on (its `PORT` variable above).  The field is asking
+     which inside port to send visitors to, so it must match.
+   - Railway gives you a URL like `zarcade-sidecar.up.railway.app`.
+     Copy it — you will remove it after setup is done.
 
 Now open a PowerShell window and run these checks:
 
@@ -125,12 +136,14 @@ The website reads `ZARCADE_SIDECAR_URL` to know where the wallet lives.
 1. Go to the **web** service → **Settings** → **Environment Variables**.
 2. Add a variable:
    - **Name**: `ZARCADE_SIDECAR_URL`
-   - **Value**: `http://${{sidecar.RAILWAY_PRIVATE_DOMAIN}}`
+   - **Value**: `http://${{sidecar.RAILWAY_PRIVATE_DOMAIN}}:8080`
 
-   The `${{sidecar.RAILWAY_PRIVATE_DOMAIN}}` is a Railway reference
-   variable — it automatically fills in the sidecar's private domain
-   and port.  The two services can now talk over Railway's internal
-   network without going through the public internet.
+   The `${{sidecar.RAILWAY_PRIVATE_DOMAIN}}` part is a Railway reference
+   variable.  It fills in the sidecar's private address.  The `:8080` is
+   the port the sidecar listens on, and the private address does not
+   carry a port by itself, so we write it here.  The two services can now
+   talk over Railway's internal network without going through the public
+   internet.
 
 3. **Deploy** the website (click **Deploy** in the service overview).
 
