@@ -593,8 +593,9 @@
     live at /arcade/unseen and /arcade/crowd, a cabinet click opens
     the room first, and cabinet two is lit for The Crowd with the
     glyph named "crowd". D-079: the lit cabinet shows a crowd of
-    four watchers, not one, because the name says crowd. PENDING:
-    owner eyeball on the rooms and the new figures.
+    four watchers, not one, because the name says crowd. D-080: the
+    divider Watcher and the room figure stay as they are, owner's
+    call. PENDING: owner verdict on the rooms themselves.
     Owner verdict on first full play: "this is dope, keep her"
     (2026-10-13).
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
