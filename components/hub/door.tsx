@@ -14,11 +14,13 @@ import { Watcher, type WatcherMood } from "@/components/watcher";
  * blind (lid shut, lantern dim), flares to alert once at ~1300ms, and settles
  * to calm at ~2100ms. That reuses the approved mood machinery.
  *
- * After the landing the Watcher lives (D-055, restaged by D-062): one slow
- * ambient story on a ~40s cycle. He stands idle, a real door appears beside
- * him (tall enough to enter, on his ground line, behind him in layer order),
- * its inner light rises as he walks over, the leaf swings open, he steps in
- * shrinking to fit, the leaf shuts behind him, the closed door holds a beat
+ * After the landing the Watcher lives (D-055, restaged by D-062 and D-067):
+ * one slow ambient story on a ~40s cycle. He stands idle, a real door
+ * appears on the back wall (tall enough to enter, standing on a higher
+ * floor line, behind him in layer order), its inner light rises as he walks
+ * upstage away from the viewer, shrinking with honest perspective, the leaf
+ * swings open, he steps in shrinking to fit, the leaf shuts behind him, the
+ * closed door holds a beat
  * and fades, the sign glows softer for an empty beat, then he peeks in from
  * the nearest screen edge (hood and eye only) and slips away, fading back to
  * his resting spot. The peek is the only JS part: one effect measures where

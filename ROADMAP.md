@@ -440,6 +440,22 @@
     peek and home beats are unchanged; under "less" none of it moves and the
     0.2s fades stay. Gates green (typecheck, lint, 76 tests, build). DONE,
     pending owner eyeball.
+   - D-067 the door restaged AGAIN on the owner's eyeball verdict: the flat
+     row (cloak, watcher, door all on one ground line) read as "a door down
+     the street," not "a door at the back of the room." The owner named the
+     artist technique he wanted (depth cues: the back figures on his paper
+     sketch sit higher, not beside). Rebuilt on the four classic cues:
+     higher feet (the door now stands on a back floor seam, --backH 60px
+     wide / 48px stacked, drawn fainter than the front row and fading in and
+     out with the door itself), smaller (door 96x210 to 88x192 wide, 76x168
+     stacked; the watcher shrinks with honest perspective along the walk,
+     1 to 0.97 to 0.94 to 0.91 to 0.88 on arrival, the 0.72 entry shrink
+     stays), overlap (he still passes in front of the door, and the back
+     seam emerges from behind his robe), atmospheric (door border and outer
+     glow dimmed a step). The walk is now a diagonal upstage climb:
+     translate(--walkX, -backH) with a bob that shrinks with distance.
+     Beats, percentages, peek and home unchanged. Verified by seek; gates
+     green. DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
