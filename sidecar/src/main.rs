@@ -51,6 +51,9 @@ struct AppState {
     /// still waking up every route that needs it says so plainly (D-085).
     wallet: Mutex<Option<HouseWallet>>,
     refilling: AtomicBool,
+    /// Outcome of the most recent pot split, for operators who cannot read the
+    /// container log (D-086). None until a split has finished or failed.
+    last_split: Mutex<Option<String>>,
 }
 
 type Shared = State<Arc<AppState>>;
@@ -136,6 +139,7 @@ async fn health(State(state): Shared) -> Response {
             Err(_) => (None, true),
         }
     };
+    let last_split = state.last_split.lock().await.clone();
     Json(json!({
         "ok": true,
         "service": "zarcade-sidecar",
@@ -144,6 +148,8 @@ async fn health(State(state): Shared) -> Response {
         "synced_to": synced_to,
         "ready": ready,
         "refilling": refilling,
+        // Null until a split has finished or failed (D-086).
+        "last_split": last_split,
     }))
     .into_response()
 }
@@ -326,36 +332,50 @@ async fn admin_split(
         )
             .into_response();
     }
-    // Clears the flag on every way out of this function, including a panic.
-    let _guard = RefillGuard(&state.refilling);
+    // The split runs in a background task and this handler answers immediately
+    // (D-086). A pot split holds the wallet for about eight minutes; a rented
+    // home's front door stops waiting long before that and cuts the connection,
+    // which cancels the split before it starts. Returning at once and letting
+    // the caller poll /health (refilling, last_split) is what those flags are for.
+    let state2 = state.clone();
+    let notes = req.notes;
+    let per_note = req.per_note;
+    tokio::spawn(async move {
+        // Clears the refilling flag on every way out of this task, panic included.
+        let _guard = RefillGuard(&state2.refilling);
+        let mut guard = state2.wallet.lock().await;
+        let Some(w) = guard.as_mut() else {
+            let msg = "skipped: house wallet was still waking up".to_string();
+            println!("pot split {msg}");
+            *state2.last_split.lock().await = Some(msg);
+            return;
+        };
+        let outcome = match w.split_pot(notes, per_note).await {
+            Ok(txid) => {
+                let msg = format!("complete: {txid} ({notes} notes of {per_note} zatoshis each)");
+                println!("pot split {msg}");
+                msg
+            }
+            Err(e) => {
+                let msg = format!("failed: {e}");
+                println!("pot split {msg}");
+                msg
+            }
+        };
+        *state2.last_split.lock().await = Some(outcome);
+    });
 
-    let mut guard = state.wallet.lock().await;
-    let Some(w) = guard.as_mut() else {
-        return warming();
-    };
-    match w.split_pot(req.notes, req.per_note).await {
-        Ok(txid) => Json(json!({
+    (
+        StatusCode::ACCEPTED,
+        Json(json!({
             "ok": true,
-            "txid": txid,
+            "started": true,
             "notes": req.notes,
             "per_note_zatoshis": req.per_note,
-            "explorer": format!("{EXPLORER_TX_BASE}/{txid}"),
-        }))
-        .into_response(),
-        Err(SendError::Settling(b)) => (
-            StatusCode::CONFLICT,
-            Json(json!({
-                "ok": false,
-                "code": "settling",
-                "error": SendError::Settling(b).to_string(),
-                "spendable_zatoshis": b.spendable,
-                "pending_change_zatoshis": b.pending_change,
-                "total_zatoshis": b.total,
-            })),
-        )
-            .into_response(),
-        Err(e) => fail(StatusCode::BAD_REQUEST, e.to_string()),
-    }
+            "poll": "/health",
+        })),
+    )
+        .into_response()
 }
 
 #[derive(Deserialize)]
@@ -432,6 +452,7 @@ async fn main() {
     let state = Arc::new(AppState {
         wallet: Mutex::new(None),
         refilling: AtomicBool::new(false),
+        last_split: Mutex::new(None),
     });
 
     // Background startup: open the wallet, then keep it. On failure, retry with
