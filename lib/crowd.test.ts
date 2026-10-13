@@ -43,6 +43,12 @@ describe("the record book", () => {
       expect(record.readable.join(" ")).not.toMatch(/sender|who sent/);
     }
   });
+
+  it("states a block on every row, so no row stands out by shape (D-077)", () => {
+    for (const record of CROWD_RECORDS) {
+      expect(record.block).not.toBeNull();
+    }
+  });
 });
 
 describe("challenge one: find the open payment", () => {

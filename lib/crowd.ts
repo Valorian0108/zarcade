@@ -59,10 +59,12 @@ export const CROWD_RECORDS: readonly CrowdRecord[] = [
   {
     // The open round D-041 read line by line on the explorer: the amount and
     // the open address in the clear, the sender named only as Ironwood Pool.
+    // Block 4,490,780 filled in after the owner caught that a missing block
+    // made this row stand out by shape (D-077).
     id: "open-round",
     txid: "c97af9530f49e1760ee7368f46ed3b8940d0095a30230a3bba244863624fa7e5",
     kind: "open",
-    block: null,
+    block: 4490780,
     url: `${EXPLORER}c97af9530f49e1760ee7368f46ed3b8940d0095a30230a3bba244863624fa7e5`,
     amountZatoshis: 1000,
     readable: ["the amount", "the open address it paid", "when it landed"],
