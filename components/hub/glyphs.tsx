@@ -36,6 +36,8 @@ export function Glyph({ name, active }: { name: GlyphName; active: boolean }) {
       return <AuditorGlyph active={active} />;
     case "vault":
       return <VaultGlyph active={active} />;
+    case "crowd":
+      return <CrowdGlyph active={active} />;
   }
 }
 
@@ -109,6 +111,23 @@ function VaultGlyph({ active }: { active: boolean }) {
         <path d="M16 24h14" {...S} />
         <path d="M27 21l3 3-3 3" {...S} />
       </motion.g>
+    </svg>
+  );
+}
+
+/** Three hoods standing close: the sealed crowd. The middle one steps up. */
+function CrowdGlyph({ active }: { active: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" className="size-10" aria-hidden="true">
+      <path d="M10 35v-7c0-4 2.5-7 5.5-7s5.5 3 5.5 7v7" {...S} opacity="0.5" />
+      <path d="M27 35v-7c0-4 2.5-7 5.5-7s5.5 3 5.5 7v7" {...S} opacity="0.5" />
+      <motion.path
+        d="M17 37v-10c0-5 3.5-8 7-8s7 3 7 8v10"
+        {...S}
+        initial={false}
+        animate={{ opacity: active ? 1 : 0.7, y: active ? -1.5 : 0 }}
+        transition={T}
+      />
     </svg>
   );
 }

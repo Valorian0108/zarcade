@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MotionToggle } from "@/components/motion-pref";
 import { Cabinet } from "./cabinet";
-import { splitGames } from "@/lib/games";
+import { GAMES, splitGames } from "@/lib/games";
 
 /**
  * The arcade floor (D-050): the second room, after the door has said what the
@@ -21,6 +21,7 @@ import { splitGames } from "@/lib/games";
  */
 export function Floor() {
   const { hero, rest } = splitGames();
+  const liveCount = GAMES.filter((g) => g.status === "playable").length;
 
   return (
     <div className="gm-root gm-floor">
@@ -52,7 +53,11 @@ export function Floor() {
           </div>
         </div>
 
-        <p className="gm-floorNote">One machine is live. The others come later.</p>
+        <p className="gm-floorNote">
+          {liveCount === 1
+            ? "One machine is live. The others come later."
+            : `${liveCount} machines are live. The others come later.`}
+        </p>
       </main>
     </div>
   );

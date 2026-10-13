@@ -2162,3 +2162,79 @@ html[data-motion="less"] *::after {
 .gm-crowdFacts {
   margin-top: 14px;
 }
+
+/* ---------- the rooms (D-078): one page about each game, before the machine ----------
+   The room reuses the floor's head and marquee so it reads as the same
+   building, then puts the game's character beside three plain blocks of
+   copy: what it is, what it teaches, what you will see. Two columns on
+   wide screens, stacked on narrow, the scene hugging the text column the
+   way the owner stages every scene. The character's one float dies under
+   the global less-motion rule above. */
+
+.gm-roomStage {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  max-width: 960px;
+  margin: 34px auto 0;
+  padding: 0 22px 60px;
+}
+
+.gm-roomFigure svg,
+.gm-roomFigureBox svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.gm-roomFigureBox {
+  margin: 0 auto;
+}
+
+.gm-cfFloat {
+  animation: gmCfFloat 6s ease-in-out infinite;
+}
+
+@keyframes gmCfFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.gm-roomAbout {
+  margin: 0;
+  color: var(--body);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.gm-roomLabel {
+  margin: 24px 0 6px;
+}
+
+.gm-roomText {
+  margin: 0;
+  color: var(--body);
+  line-height: 1.6;
+}
+
+.gm-roomActions {
+  margin-top: 30px;
+}
+
+@media (max-width: 860px) {
+  .gm-roomStage {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .gm-roomFigure,
+  .gm-roomFigureBox {
+    max-width: 220px;
+  }
+}

@@ -42,13 +42,17 @@ export function Cabinet({
   const playable = game.status === "playable" && Boolean(game.href);
 
   function open() {
-    if (!playable || !game.href) return;
+    if (!playable) return;
+    // D-078: a cabinet with room copy opens its room first; the room then
+    // steps inside to the machine. Entries without a room fall back to href.
+    const target = game.about ? `/arcade/${game.id}` : game.href;
+    if (!target) return;
     if (reduced) {
-      router.push(game.href);
+      router.push(target);
       return;
     }
     setClicking(true);
-    window.setTimeout(() => router.push(game.href as string), 450);
+    window.setTimeout(() => router.push(target), 450);
   }
 
   // dark cabinets rise first on a short stagger; the lit one has its own
@@ -93,7 +97,7 @@ export function Cabinet({
         onClick={open}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        aria-label={`${game.name}. ${game.teach} Ready to play.`}
+        aria-label={`${game.name}. ${game.teach} Step into its room.`}
       >
         {body}
       </button>

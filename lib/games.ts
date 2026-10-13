@@ -8,8 +8,10 @@
  * no em dashes, grandma-readable.
  */
 
+import { CROWD_COPY } from "@/lib/crowd";
+
 export type GameStatus = "playable" | "soon";
-export type GlyphName = "proof" | "doublespend" | "auditor" | "vault";
+export type GlyphName = "proof" | "doublespend" | "auditor" | "vault" | "crowd";
 
 export interface GameEntry {
   id: string;
@@ -17,10 +19,16 @@ export interface GameEntry {
   /** One plain line: what this game teaches. Always visible on the cabinet. */
   teach: string;
   status: GameStatus;
-  /** Where a playable cabinet goes when opened. */
+  /** Where the machine lives. The room links here; cabinets open the room. */
   href?: string;
   /** Custom vector glyph shown faintly on a dark cabinet's screen (D-010). */
   glyph?: GlyphName;
+  /** The room (D-078): plain prose about the fiction and what you do. No hints. */
+  about?: string;
+  /** The room (D-078): the lesson, in plain words. */
+  teaches?: string;
+  /** The room (D-078): the objects on screen. Never the choices or answers. */
+  sees?: string;
 }
 
 export const GAMES: GameEntry[] = [
@@ -31,6 +39,28 @@ export const GAMES: GameEntry[] = [
     status: "playable",
     // The real home of the game now that the shared frame (A5) exists.
     href: "/games/unseen",
+    about:
+      "You stand at a window with one choice to make: hide a payment, or leave it open. The house wallet pays real testnet money either way, and the screen then shows what the network actually saw. Nothing here is simulated.",
+    teaches:
+      "A shielded payment leaves no amount, no sender and no receiver in the public record. An open payment leaves a trail anyone can follow.",
+    sees:
+      "You will see two choices, a waiting clock, and a panel that reads what the public can see.",
+  },
+  {
+    // Cabinet two, lit after the owner's playtest verdict ("this is dope,
+    // keep her") and the rooms build (D-078).
+    id: "crowd",
+    name: "The Crowd",
+    teach: CROWD_COPY.teach,
+    status: "playable",
+    href: "/games/crowd",
+    glyph: "crowd",
+    about:
+      "You play the stranger. The arcade hands you its complete record book, every payment it ever made, and asks you to read what you can. Some rows give up their facts. Some give up nothing at all.",
+    teaches:
+      "Open payments are trails. Shielded payments are sealed: when they landed and how many notes they carried are public, amounts and people are not.",
+    sees:
+      "You will see a row of hooded figures, a list of records with explorer links, and a meter that reads what you pinned down.",
   },
   {
     id: "proof",
