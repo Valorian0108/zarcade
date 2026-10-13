@@ -28,9 +28,10 @@ WORKDIR /app
 COPY --from=builder /build/target/release/zarcade-sidecar /usr/local/bin/zarcade-sidecar
 
 # Wallet data (seed.hex, wallet.sqlite, addresses) lives on a Railway
-# volume mounted here.  The env var can be overridden per service.
+# volume mounted at /data.  Railway refuses the Dockerfile VOLUME
+# keyword ("use Railway Volumes"), so the volume is attached from the
+# dashboard instead, at the same path this variable points to.
 ENV ZARCADE_DATA_DIR=/data
-VOLUME ["/data"]
 
 EXPOSE 9070
 CMD ["zarcade-sidecar"]
