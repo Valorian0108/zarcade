@@ -1318,9 +1318,13 @@ html[data-motion="less"] .gm-wMote2 {
   /* D-071: come down by exactly the door's rise above the figure box plus
      the title's own lift, so the door's top edge sits level with the
      title's top edge while the horizontal position stays where D-070 put
-     it. The stacked layout below zeroes this; phones keep their old
-     vertical staging. */
-  margin-top: calc(var(--doorRise) + var(--titleLift, 26px));
+     it. D-072: plus --sceneDrop, the owner's drag: "like when you drag
+     something down, that is the position shift I am referring to". The
+     drop is one named number on purpose, so "a bit more" or "a bit less"
+     is a single edit. The stacked layout below zeroes the whole margin;
+     phones keep their old vertical staging. */
+  --sceneDrop: 40px;
+  margin-top: calc(var(--doorRise) + var(--titleLift, 26px) + var(--sceneDrop));
   --peekX: 400px;
   --peekFull: 720px;
   --peekTilt: -4deg;

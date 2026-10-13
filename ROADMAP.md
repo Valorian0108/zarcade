@@ -509,6 +509,15 @@
      survived a deploy that moved the scene without firing resize. Poison
      and heal test passes. Anchors and every beat re-seeked on wide; gates
      green; after capture taken. DONE, pending owner eyeball.
+   - D-072 the owner's drag: the whole scene block comes down the page as
+     one object with everything inside it unchanged (owner: "like when you
+     drag something down, thats the position shift im referring to"). One
+     named number, --sceneDrop 40px, added to the story's margin on top of
+     D-071's rise and lift; 40px lands the scene at the optical centre of
+     the text block, and being named it makes any future nudge a single
+     edit. Measured 40.1px below the title top on wide; anchors and every
+     beat unchanged; phones untouched. Gates green; after capture taken.
+     DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
