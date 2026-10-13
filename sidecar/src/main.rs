@@ -354,9 +354,15 @@ async fn main() {
         .install_default()
         .expect("failed to install the TLS crypto provider");
 
-    let data_dir = std::env::current_dir()
-        .expect("cannot determine working directory")
-        .join("data");
+    // The wallet data lives in ./data under the working directory by default.
+    // ZARCADE_DATA_DIR overrides it, which is how a rented home (D-081)
+    // points the sidecar at its persistent volume without changing local runs.
+    let data_dir = match std::env::var("ZARCADE_DATA_DIR") {
+        Ok(dir) => std::path::PathBuf::from(dir),
+        Err(_) => std::env::current_dir()
+            .expect("cannot determine working directory")
+            .join("data"),
+    };
 
     let mut house = HouseWallet::init(&data_dir)
         .await
@@ -385,10 +391,18 @@ async fn main() {
             refilling: AtomicBool::new(false),
         }));
 
-    // Localhost only: the sidecar is never exposed to players directly.
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:9070")
+    // Localhost only by default: the sidecar is never exposed to players
+    // directly. A rented home (D-081) sets PORT, and the platform then
+    // reaches the sidecar through its own private network, so the bind host
+    // moves with it via ZARCADE_SIDECAR_BIND. Without PORT, nothing changes
+    // on this machine: same address, same localhost-only posture.
+    let port = std::env::var("PORT").unwrap_or_else(|_| "9070".to_string());
+    let bind_host =
+        std::env::var("ZARCADE_SIDECAR_BIND").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let bind_addr = format!("{bind_host}:{port}");
+    let listener = tokio::net::TcpListener::bind(&bind_addr)
         .await
-        .expect("cannot bind to 127.0.0.1:9070");
-    println!("zarcade-sidecar listening on http://127.0.0.1:9070");
+        .unwrap_or_else(|e| panic!("cannot bind to {bind_addr}: {e}"));
+    println!("zarcade-sidecar listening on http://{bind_addr}");
     axum::serve(listener, app).await.expect("server crashed");
 }
