@@ -6,9 +6,9 @@ the website can talk to, on a private network — the same posture as the
 original Hetzner shape, without you touching a server.
 
 The repo stays private.  Railway deploys straight from GitHub using your
-account's connection.  No credit card is needed for the first project?
-Railway asks for one, but it is not charged — the free tier covers a
-small site.  Watch the usage page through the first week.
+account's connection.  You already sorted out the account side when you
+brought Railway back up.  The plan is usage based, so keep an eye on the
+usage page through the first week.
 
 ---
 
@@ -228,12 +228,10 @@ subdomain:
 - **Wallet data**: the volume at `/data` survives all redeploys.  Your
   seed, transaction history, and addresses are safe.
 - **Pot getting low**: claim more testnet ZEC from the faucet, then
-  split again.  To reach the sidecar after the public domain is gone,
-  you can temporarily re-enable the domain, or use the Railway CLI:
-
-```
-npx @railway/cli run --service sidecar curl localhost:PORT/balance
-```
+  split again.  The sidecar has no public address in normal life, so to
+  run the split curls again, temporarily add a public domain back to the
+  sidecar (Settings, Networking), run the curls, then remove it.  The
+  admin token guards the split the whole time.
 
 - **Checking logs**: Railway dashboard → service → **Deploy Logs** or
   **Runtime Logs**.
