@@ -592,6 +592,9 @@
     eyeball on the hood art and
     the searchlight, then the go-live flip (crowd entry added, status
     playable, three-hoods glyph).
+    Owner verdict on first full play: "this is dope, keep her"
+    (2026-10-13). The go-live flip now waits on D-078: one room per
+    game on the hub comes first, then the cabinet points at the room.
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
     no wallet changes.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
