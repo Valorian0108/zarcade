@@ -586,7 +586,10 @@
     playthrough of all eight states with zero console errors. D-076
     logs the two amendments the real book forced: C3 became a
     why-question on the open row, C2 names the live 1,000-zatoshi
-    constant. PENDING: owner playtest and eyeball on the hood art and
+    constant. First play already caught one leak: the open row's
+    missing block number made it stand out by shape; D-077 states the
+    block on every row and tests it. PENDING: owner playtest and
+    eyeball on the hood art and
     the searchlight, then the go-live flip (crowd entry added, status
     playable, three-hoods glyph).
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
