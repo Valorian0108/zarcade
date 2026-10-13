@@ -592,8 +592,9 @@
     eyeball on the hood art and the searchlight. D-078 built: rooms
     live at /arcade/unseen and /arcade/crowd, a cabinet click opens
     the room first, and cabinet two is lit for The Crowd with the
-    glyph named "crowd". PENDING: owner eyeball on the rooms and the
-    new crowd figure.
+    glyph named "crowd". D-079: the lit cabinet shows a crowd of
+    four watchers, not one, because the name says crowd. PENDING:
+    owner eyeball on the rooms and the new figures.
     Owner verdict on first full play: "this is dope, keep her"
     (2026-10-13).
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
