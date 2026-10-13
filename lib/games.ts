@@ -29,6 +29,8 @@ export interface GameEntry {
   teaches?: string;
   /** The room (D-078): the objects on screen. Never the choices or answers. */
   sees?: string;
+  /** Who stands on a lit cabinet's screen (D-079): one Watcher, or a crowd. */
+  cast?: "watcher" | "crowd";
 }
 
 export const GAMES: GameEntry[] = [
@@ -55,6 +57,7 @@ export const GAMES: GameEntry[] = [
     status: "playable",
     href: "/games/crowd",
     glyph: "crowd",
+    cast: "crowd",
     about:
       "You play the stranger. The arcade hands you its complete record book, every payment it ever made, and asks you to read what you can. Some rows give up their facts. Some give up nothing at all.",
     teaches:

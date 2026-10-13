@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Watcher } from "@/components/watcher";
+import { Watcher, WatcherCrowd } from "@/components/watcher";
 import { useMotionPref } from "@/components/motion-pref";
 import { Glyph } from "./glyphs";
 import type { GameEntry } from "@/lib/games";
@@ -65,7 +65,11 @@ export function Cabinet({
       <div className="gm-cabScreenWell">
         <div className="gm-cabScreen">
           {playable ? (
-            <Watcher mood="calm" width={hero ? 116 : 58} />
+            game.cast === "crowd" ? (
+              <WatcherCrowd width={hero ? 150 : 84} />
+            ) : (
+              <Watcher mood="calm" width={hero ? 116 : 58} />
+            )
           ) : game.glyph ? (
             <span className="gm-cabGlyph">
               <Glyph name={game.glyph} active={hovered && !reduced} />

@@ -40,6 +40,7 @@ describe("the hub list", () => {
     expect(crowd?.status).toBe("playable");
     expect(crowd?.href).toBe("/games/crowd");
     expect(crowd?.glyph).toBe("crowd");
+    expect(crowd?.cast).toBe("crowd");
     const unseen = GAMES.find((g) => g.id === "unseen");
     expect(unseen?.status).toBe("playable");
     expect(unseen?.href).toBe("/games/unseen");

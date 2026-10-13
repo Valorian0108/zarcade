@@ -136,3 +136,91 @@ export function Watcher({
     </div>
   );
 }
+
+/**
+ * The crowd of watchers (D-079): four hooded figures standing together,
+ * because on The Crowd the public is never one person. Same cloak, same
+ * single gold eye, same blink and flame classes as the Watcher, so the
+ * crowd moves in the house motion vocabulary and stills under the global
+ * less-motion rule. One lantern for the whole crowd: they share one record
+ * book to read. Drawn back to front so the overlap reads as depth at the
+ * small cabinet size.
+ */
+export function WatcherCrowd({ width = 58 }: { width?: number }) {
+  const eye = (delay: string) => (
+    <g className="gm-wEye" style={{ animationDelay: delay }}>
+      <circle cx="2" cy="36" r="6" fill="url(#cwIris)" />
+      <circle className="gm-wPupil" cx="3.6" cy="36" r="2.4" fill="#14101a" />
+      <circle cx="0.4" cy="33.6" r="1.1" fill="#ffffff" opacity="0.85" />
+    </g>
+  );
+  const hood = (
+    <>
+      <path
+        d="M0 0c-19 0-30 14-32 38-2 23-6 42-9 59-1 7 3 12 10 13 10 2 20 3 31 3s21-1 31-3c7-1 11-6 10-13-3-17-7-36-9-59-2-24-13-38-32-38Z"
+        fill="url(#cwCloak)"
+        stroke="rgba(255,255,255,0.07)"
+      />
+      <path d="M0 16c-12 0-19 8-20 20-1 11 5 18 20 18s21-7 20-18c-1-12-8-20-20-20Z" fill="#0e0b14" />
+    </>
+  );
+
+  return (
+    <div className="gm-watcher" style={{ width }}>
+      <svg
+        viewBox="12 126 200 132"
+        role="img"
+        aria-label="The crowd of watchers. Four hooded figures stand together, each with one gold eye, and the front one carries the lantern. Here the public is never one person."
+      >
+        <defs>
+          <linearGradient id="cwCloak" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2b2438" />
+            <stop offset="100%" stopColor="#1c1728" />
+          </linearGradient>
+          <radialGradient id="cwIris" cx="42%" cy="38%" r="70%">
+            <stop offset="0%" stopColor="#ffe3a3" />
+            <stop offset="55%" stopColor="#edb64a" />
+            <stop offset="100%" stopColor="#b9862f" />
+          </radialGradient>
+          <radialGradient id="cwGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffcf6e" stopOpacity="0.5" />
+            <stop offset="45%" stopColor="#edb64a" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="#edb64a" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <ellipse cx="112" cy="248" rx="70" ry="8" fill="#0c0a11" opacity="0.55" />
+
+        <g className="gm-wFloat">
+          <circle className="gm-wGlow" cx="176" cy="196" r="44" fill="url(#cwGlow)" />
+
+          {/* two watchers a row back */}
+          <g transform="translate(56 158) scale(0.74)" opacity="0.75">
+            {hood}
+            {eye("0.9s")}
+          </g>
+          <g transform="translate(168 158) scale(0.74)" opacity="0.75">
+            {hood}
+            {eye("2.1s")}
+          </g>
+
+          {/* one watcher half a step back */}
+          <g transform="translate(90 146) scale(0.86)" opacity="0.9">
+            {hood}
+            {eye("3.4s")}
+          </g>
+
+          {/* the front watcher, carrying the lantern for all four */}
+          <g transform="translate(134 134)">
+            {hood}
+            {eye("0s")}
+            <path d="M24 74c8 2 14 5 19 10" fill="none" stroke="#3a3446" strokeWidth="4" strokeLinecap="round" />
+            <path d="M42 80h8l1 5h-10l1-5Z" fill="#4a4258" />
+            <path d="M39 85h14l-2 20h-10l-2-20Z" fill="#241f2f" stroke="#4a4258" strokeWidth="1.5" />
+            <ellipse className="gm-wFlame" cx="46" cy="96" rx="3.2" ry="5" fill="#ffcf6e" />
+          </g>
+        </g>
+      </svg>
+    </div>
+  );
+}
