@@ -4,10 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
-  // Standalone output (D-081): the build emits a small self-contained server
-  // that rented homes run directly, instead of a full node_modules. Local
-  // development is untouched; only the build artifact changes shape.
-  output: "standalone",
+  // No `output` setting on purpose: Next's own Railway path builds a normal
+  // .next and starts it with `next start` (D-084). The earlier standalone
+  // experiment was removed after the first live deploy answered 502.
   turbopack: {
     rules: {
       "*.css": {
