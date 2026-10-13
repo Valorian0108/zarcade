@@ -28,7 +28,9 @@ import { Watcher, type WatcherMood } from "@/components/watcher";
  * the figure rests and writes three CSS variables (--peekX, --peekFull,
  * --peekTilt); the stylesheet carries safe fallbacks, so the story still
  * plays if measuring ever fails. The walk distance and door size are CSS
- * variables per breakpoint, computed from the fixed figure geometry. Under
+ * variables per breakpoint, computed from the fixed figure geometry (D-069:
+ * the figure is 150px wide on this page, small enough that his own door
+ * towers over him, and the peek hides 56% of him behind a 16deg lean). Under
  * "less" motion none of this plays and nothing is measured.
  *
  * Pressing "Step inside": the button sinks (CSS :active), the lantern flares
@@ -58,12 +60,17 @@ export function Door() {
     };
   }, [reduced]);
 
-  // D-055: measure the resting spot once, and again on resize, so the peek
-  // comes from whichever screen edge is nearer at any window width. The
-  // hidden fraction is 40%: the eye sits at ~46% of the figure's width and
-  // the hood rim starts at ~30%, so hiding more than 40% would push the eye
-  // itself past the edge. The machine check measures the eye's screen
-  // position during the peek and fails if it is offscreen.
+  // D-055, restaged by D-069: measure the resting spot once, and again on
+  // resize, so the peek comes from whichever screen edge is nearer at any
+  // window width. The hidden fraction is 56%: most of the body stays out of
+  // view, because that is what a peek is. The eye sits at ~46% of the
+  // figure's width, inside the hidden zone at that fraction, so the peek
+  // leans: the 16deg diagonal tilt written to --peekTilt below swings the
+  // head and eye around the corner into the visible sliver, hood first,
+  // like somebody craning around a doorframe. The fraction and the angle
+  // are tuned together by machine check: more hidden or less lean and the
+  // eye itself clips the screen edge. The machine check measures the eye's
+  // screen position during the peek and fails if it is offscreen.
   useEffect(() => {
     if (reduced) return;
     const el = storyRef.current;
@@ -74,13 +81,13 @@ export function Door() {
       const toLeft = r.left;
       const toRight = window.innerWidth - r.right;
       const fromLeft = toLeft <= toRight;
-      const hidden = r.width * 0.4;
+      const hidden = r.width * 0.56;
       const peek = fromLeft ? -(toLeft + hidden) : toRight + hidden;
       const full = fromLeft ? -(toLeft + r.width + 80) : toRight + r.width + 80;
       el.style.setProperty("--peekX", `${Math.round(peek)}px`);
       el.style.setProperty("--peekFull", `${Math.round(full)}px`);
-      // Lean into the peek, like somebody turning their head around a corner.
-      el.style.setProperty("--peekTilt", fromLeft ? "4deg" : "-4deg");
+      // The diagonal lean: most of him stays hidden, the eye cranes in.
+      el.style.setProperty("--peekTilt", fromLeft ? "16deg" : "-16deg");
     };
     measure();
     window.addEventListener("resize", measure);
@@ -139,7 +146,7 @@ export function Door() {
 
         <div className="gm-doorWatch">
           <div className="gm-wStory" ref={storyRef}>
-            <Watcher mood={mood} width={300} />
+            <Watcher mood={mood} width={150} />
             {/* The door he walks through (D-055, restaged by D-062): frame,
                 threshold, an inner light, and a leaf that swings open for
                 him. Decorative; the story cycle in game.css gives it life. */}

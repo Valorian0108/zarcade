@@ -1298,25 +1298,26 @@ html[data-motion="less"] .gm-wMote2 {
   --peekX: 400px;
   --peekFull: 720px;
   --peekTilt: -4deg;
-  /* D-062, restaged by D-067 and D-068: the walk distance, the door's size
-     and the two heights of the back platform are geometry, not guesses. The
-     figure is a fixed 300px wide on this page, his cloak centre sits at
-     134px, and the door centre follows from its offset, so each breakpoint
-     states its numbers once and every keyframe reads them. --backH is the
+  /* D-062, restaged by D-067 and D-068, resized by D-069: the walk distance,
+     the door's size and the two heights of the back platform are geometry,
+     not guesses. The figure is a fixed 150px wide on this page (he used to
+     be 300 and towered over his own door), his cloak centre sits at 67px,
+     and the door centre follows from its offset, so each breakpoint states
+     its numbers once and every keyframe reads them. --backH is the
      platform's near edge (the seam the watcher lives on); --climbD is the
      platform's own depth, the extra climb from the seam to the far wall
      where the door stands. The walk crosses both, so every step moves him
      away from the viewer and toward the door at once. */
-  --walkX: 138px;
+  --walkX: 115px;
   --doorW: 88px;
   --doorH: 192px;
-  --doorRight: -16px;
+  --doorRight: -76px;
   --backH: 60px;
   --climbD: 31px;
 }
 
 /* D-067, rebuilt by D-068: the back platform's near edge. The watcher
-   LIVES on this line: his feet meet it exactly (the +3px offset is his
+   LIVES on this line: his feet meet it exactly (the +2px offset is his
    transform origin lifting him at depth scale), and the door stands
    deeper, against the far wall. The seam is permanent now, not a guest of
    the door: the platform exists from load, so the less-motion picture is a
@@ -1328,7 +1329,7 @@ html[data-motion="less"] .gm-wMote2 {
   position: absolute;
   left: -6%;
   right: calc(var(--doorRight) - 44px);
-  bottom: calc(var(--backH) + 3px);
+  bottom: calc(var(--backH) + 2px);
   height: 1px;
   background: linear-gradient(
     90deg,
@@ -1354,7 +1355,7 @@ html[data-motion="less"] .gm-wMote2 {
 
 /* D-062, restaged by D-067 and D-068: a door he can actually use, standing
    on the back platform's FAR floor, against the wall, deeper than the
-   watcher's near edge by exactly --climbD (the +4px is his foot lift at
+   watcher's near edge by exactly --climbD (the +2px is his foot lift at
    arrival scale, so his feet meet the door's base when he gets there).
    Smaller than the old front-row door (192px against his 348px) and a step
    paler, because it is further away; still layered BEHIND him so he passes
@@ -1365,7 +1366,7 @@ html[data-motion="less"] .gm-wMote2 {
 .gm-wMiniDoor {
   position: absolute;
   right: var(--doorRight);
-  bottom: calc(var(--backH) + var(--climbD) + 4px);
+  bottom: calc(var(--backH) + var(--climbD) + 2px);
   width: var(--doorW);
   height: var(--doorH);
   border: 1px solid rgba(237, 182, 74, 0.38);
@@ -1558,10 +1559,10 @@ html[data-motion="less"] .gm-wMote2 {
      tucks closer and narrows, and both platform heights drop, so the depth
      still reads on a small phone width without eating the scene. */
   .gm-wStory {
-    --walkX: 140px;
+    --walkX: 109px;
     --doorW: 76px;
     --doorH: 168px;
-    --doorRight: -12px;
+    --doorRight: -64px;
     --backH: 48px;
     --climbD: 24px;
   }

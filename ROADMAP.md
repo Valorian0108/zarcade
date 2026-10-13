@@ -472,6 +472,17 @@
      of your world. Verified by seek on the stacked breakpoint (feet on
      seam, feet on threshold, cloak centre inside the door span); gates
      green. DONE, pending owner eyeball.
+   - D-069 the figure shrunk and the peek made honest (owner screenshot
+     verdict on D-068: the watcher towered over his own door, and the peek
+     showed most of his body). Door-page figure 300px to 150px wide: at his
+     platform rest he is about 153px against a 192px door, so the door is
+     1.25 times the person. Geometry recomputed from the new fixed numbers
+     (cloak centre 67, walkX 115 wide / 109 stacked, doorRight -76 / -64,
+     foot offsets +2px). The peek now hides 56% of him behind a 16deg
+     diagonal lean, so a sliver of hood and one craned eye is all that
+     shows. Other Watcher instances untouched. Verified by seek (feet on
+     seam and on threshold within a pixel, eye onscreen at the peek with
+     most of the body offscreen); gates green. DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
