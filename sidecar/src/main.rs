@@ -46,7 +46,10 @@ use wallet::{HouseWallet, SendError};
 /// a spinner. This way a round request can be refused instantly, with the truth,
 /// while the refill is still running.
 struct AppState {
-    wallet: Mutex<HouseWallet>,
+    /// `None` until the background startup task has the wallet open. The door
+    /// binds first so the platform always gets an answer; while the wallet is
+    /// still waking up every route that needs it says so plainly (D-085).
+    wallet: Mutex<Option<HouseWallet>>,
     refilling: AtomicBool,
 }
 
@@ -72,6 +75,20 @@ fn fail(status: StatusCode, message: impl Into<String>) -> Response {
     (
         status,
         Json(json!({ "ok": false, "error": message.into() })),
+    )
+        .into_response()
+}
+
+/// The sentence a caller gets when the wallet has not finished waking up yet
+/// (D-085). Same grandma rule as REFILLING: plain, says what to do, hides the
+/// machinery. The website turns `code: "warming"` into a friendly "the house
+/// wallet is starting up" instead of a hard error.
+const WARMING: &str = "The house wallet is still waking up. Please try again in a moment.";
+
+fn warming() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({ "ok": false, "code": "warming", "error": WARMING })),
     )
         .into_response()
 }
@@ -103,31 +120,39 @@ const HEALTH_LOCK_TIMEOUT: std::time::Duration = std::time::Duration::from_milli
 
 async fn health(State(state): Shared) -> Response {
     let refilling = state.refilling.load(Ordering::SeqCst);
-    // While a refill holds the wallet the height simply cannot be read, so there
-    // is no point paying the lock deadline to find that out. Skipping the wait is
-    // what keeps this endpoint fast at the exact moment someone is most likely to
-    // be asking "is it still going?".
-    let synced_to = if refilling {
-        None
+    // `ready` tells the website whether the wallet is open yet (D-085). While
+    // it is still waking up, synced_to is null and ready is false, which is
+    // honest and lets the arcade say "warming up" instead of showing a dead
+    // spinner. A busy lock (a send or split holds it) still means the wallet
+    // exists, so that counts as ready.
+    let (synced_to, ready) = if refilling {
+        (None, true)
     } else {
         match tokio::time::timeout(HEALTH_LOCK_TIMEOUT, state.wallet.lock()).await {
-            Ok(w) => w.synced_height().ok(),
-            Err(_) => None,
+            Ok(guard) => match guard.as_ref() {
+                Some(w) => (w.synced_height().ok(), true),
+                None => (None, false),
+            },
+            Err(_) => (None, true),
         }
     };
     Json(json!({
         "ok": true,
         "service": "zarcade-sidecar",
         "network": "testnet",
-        // Null means "the wallet is busy", not "unknown chain".
+        // Null means "the wallet is busy or still waking up", not "unknown chain".
         "synced_to": synced_to,
+        "ready": ready,
         "refilling": refilling,
     }))
     .into_response()
 }
 
 async fn address(State(state): Shared) -> Response {
-    let w = state.wallet.lock().await;
+    let guard = state.wallet.lock().await;
+    let Some(w) = guard.as_ref() else {
+        return warming();
+    };
     Json(json!({
         "ok": true,
         "network": "testnet",
@@ -137,7 +162,10 @@ async fn address(State(state): Shared) -> Response {
 }
 
 async fn transparent_address(State(state): Shared) -> Response {
-    let w = state.wallet.lock().await;
+    let guard = state.wallet.lock().await;
+    let Some(w) = guard.as_ref() else {
+        return warming();
+    };
     Json(json!({
         "ok": true,
         "network": "testnet",
@@ -147,7 +175,10 @@ async fn transparent_address(State(state): Shared) -> Response {
 }
 
 async fn balance(State(state): Shared) -> Response {
-    let mut w = state.wallet.lock().await;
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
     let synced_to = match w.sync().await {
         Ok(h) => h,
         Err(e) => return fail(StatusCode::BAD_GATEWAY, e),
@@ -171,7 +202,10 @@ async fn balance(State(state): Shared) -> Response {
 }
 
 async fn sync_now(State(state): Shared) -> Response {
-    let mut w = state.wallet.lock().await;
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
     match w.sync().await {
         Ok(h) => Json(json!({ "ok": true, "synced_to": h })).into_response(),
         Err(e) => fail(StatusCode::BAD_GATEWAY, e),
@@ -205,7 +239,10 @@ async fn send(State(state): Shared, Json(req): Json<SendRequest>) -> Response {
         )
             .into_response();
     }
-    let mut w = state.wallet.lock().await;
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
     match w.send(&req.to, req.zatoshis, req.memo.as_deref()).await {
         Ok(txid) => Json(json!({
             "ok": true,
@@ -292,7 +329,10 @@ async fn admin_split(
     // Clears the flag on every way out of this function, including a panic.
     let _guard = RefillGuard(&state.refilling);
 
-    let mut w = state.wallet.lock().await;
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
     match w.split_pot(req.notes, req.per_note).await {
         Ok(txid) => Json(json!({
             "ok": true,
@@ -327,7 +367,10 @@ struct TxStatusQuery {
 /// money, and once the payment is mined it never touches the network, so the game
 /// can keep asking while the next player's round is being built (D-031, C).
 async fn tx_status(State(state): Shared, Query(q): Query<TxStatusQuery>) -> Response {
-    let mut w = state.wallet.lock().await;
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
     match w.tx_status(&q.txid).await {
         Ok(s) => Json(json!({
             "ok": true,
@@ -364,17 +407,66 @@ async fn main() {
             .join("data"),
     };
 
-    let mut house = HouseWallet::init(&data_dir)
+    // Bind the door BEFORE the wallet is open (D-085). The first Railway deploy
+    // froze here: init blocked on lightwalletd with no deadline, so the listener
+    // never bound and every request answered 502 with a silent log. Opening the
+    // door first means the platform always gets an answer, /health reports
+    // ready:false while the wallet wakes, and a background task keeps retrying.
+    let port = std::env::var("PORT").unwrap_or_else(|_| "9070".to_string());
+    // A rented home sets PORT and reaches us over its own network, not loopback,
+    // so listen on all interfaces. Without PORT (local dev) stay localhost-only.
+    // ZARCADE_SIDECAR_BIND still wins if the operator pins it explicitly.
+    let bind_host = std::env::var("ZARCADE_SIDECAR_BIND").unwrap_or_else(|_| {
+        if std::env::var("PORT").is_ok() {
+            "0.0.0.0".to_string()
+        } else {
+            "127.0.0.1".to_string()
+        }
+    });
+    let bind_addr = format!("{bind_host}:{port}");
+    let listener = tokio::net::TcpListener::bind(&bind_addr)
         .await
-        .unwrap_or_else(|e| panic!("zarcade-sidecar could not start: {e}"));
+        .unwrap_or_else(|e| panic!("cannot bind to {bind_addr}: {e}"));
+    println!("zarcade-sidecar listening on http://{bind_addr}");
 
-    println!("house wallet ready; deposit address:\n  {}", house.address());
+    let state = Arc::new(AppState {
+        wallet: Mutex::new(None),
+        refilling: AtomicBool::new(false),
+    });
 
-    // One initial sync so the first request is fast; failures are not fatal
-    // (every balance/send syncs again on demand).
-    match house.sync().await {
-        Ok(h) => println!("initial sync complete up to height {h}"),
-        Err(e) => println!("initial sync failed, will retry on demand: {e}"),
+    // Background startup: open the wallet, then keep it. On failure, retry with
+    // a short capped backoff so a transient network blip self-heals instead of
+    // leaving the service permanently "warming up". The door is already open,
+    // so this never blocks a request.
+    {
+        let state = state.clone();
+        let data_dir = data_dir.clone();
+        tokio::spawn(async move {
+            let mut attempt: u32 = 0;
+            loop {
+                attempt += 1;
+                println!("opening house wallet (attempt {attempt}, data dir {data_dir:?})");
+                match HouseWallet::init(&data_dir).await {
+                    Ok(mut house) => {
+                        println!("house wallet ready; deposit address:\n  {}", house.address());
+                        // One initial sync so the first request is fast; failures
+                        // are not fatal (every balance/send syncs on demand).
+                        match house.sync().await {
+                            Ok(h) => println!("initial sync complete up to height {h}"),
+                            Err(e) => println!("initial sync failed, will retry on demand: {e}"),
+                        }
+                        *state.wallet.lock().await = Some(house);
+                        println!("house wallet is live");
+                        break;
+                    }
+                    Err(e) => {
+                        let wait = std::cmp::min(5 * attempt, 30);
+                        println!("house wallet not ready: {e}; retrying in {wait}s");
+                        tokio::time::sleep(std::time::Duration::from_secs(wait as u64)).await;
+                    }
+                }
+            }
+        });
     }
 
     let app = Router::new()
@@ -386,23 +478,7 @@ async fn main() {
         .route("/sync", post(sync_now))
         .route("/send", post(send))
         .route("/admin/split", post(admin_split))
-        .with_state(Arc::new(AppState {
-            wallet: Mutex::new(house),
-            refilling: AtomicBool::new(false),
-        }));
+        .with_state(state);
 
-    // Localhost only by default: the sidecar is never exposed to players
-    // directly. A rented home (D-081) sets PORT, and the platform then
-    // reaches the sidecar through its own private network, so the bind host
-    // moves with it via ZARCADE_SIDECAR_BIND. Without PORT, nothing changes
-    // on this machine: same address, same localhost-only posture.
-    let port = std::env::var("PORT").unwrap_or_else(|_| "9070".to_string());
-    let bind_host =
-        std::env::var("ZARCADE_SIDECAR_BIND").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let bind_addr = format!("{bind_host}:{port}");
-    let listener = tokio::net::TcpListener::bind(&bind_addr)
-        .await
-        .unwrap_or_else(|e| panic!("cannot bind to {bind_addr}: {e}"));
-    println!("zarcade-sidecar listening on http://{bind_addr}");
     axum::serve(listener, app).await.expect("server crashed");
 }

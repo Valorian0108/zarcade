@@ -68,6 +68,17 @@ use crate::cache::MemBlockCache;
 pub const LIGHTWALLETD_HOST: &str = "testnet.zec.rocks";
 pub const LIGHTWALLETD_URL: &str = "https://testnet.zec.rocks:443";
 
+/// How long the wallet waits on lightwalletd before giving up (D-085).
+///
+/// Without a deadline the startup connect and the tip fetch can block forever
+/// on a network that silently drops the connection (a rented home's egress, an
+/// IPv6 blackhole). That looks exactly like a dead service: the door never
+/// opens and the logs stay silent, which is what the first Railway deploy did.
+/// A timeout turns the hang into a visible error the retry loop in main can
+/// act on, so the service comes up and keeps trying instead of freezing.
+pub const LWD_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+pub const LWD_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Safety cap per send, in zatoshis (0.001 TAZ). Game logic requests fixed
 /// tiny amounts; this cap is the last line of defense (DECISIONS D-025).
 pub const MAX_SEND_ZATOSHIS: u64 = 100_000;
@@ -287,6 +298,7 @@ impl HouseWallet {
                     .with_webpki_roots(),
             )
             .map_err(|e| format!("cannot configure TLS: {e}"))?
+            .connect_timeout(LWD_CONNECT_TIMEOUT)
             .connect()
             .await
             .map_err(|e| format!("cannot reach lightwalletd at {lwd_url}: {e}"))?;
@@ -297,11 +309,14 @@ impl HouseWallet {
         //    pinned height matters when the wallet is re-homed onto a chain
         //    where it was already paid: the birthday must sit below that
         //    payment or the notes can never be discovered.
-        let tip = client
-            .get_latest_block(service::ChainSpec {})
-            .await
-            .map_err(|e| format!("cannot fetch chain tip: {e}"))?
-            .into_inner();
+        let tip = tokio::time::timeout(
+            LWD_REQUEST_TIMEOUT,
+            client.get_latest_block(service::ChainSpec {}),
+        )
+        .await
+        .map_err(|_| format!("timed out fetching chain tip from {lwd_url}"))?
+        .map_err(|e| format!("cannot fetch chain tip: {e}"))?
+        .into_inner();
         let tip_height = u32::try_from(tip.height)
             .map_err(|_| format!("implausible tip height {}", tip.height))?;
         let tip_hash: [u8; 32] = tip
@@ -321,16 +336,19 @@ impl HouseWallet {
                 let birthday_state = if birthday_height == tip_height {
                     ChainState::empty(BlockHeight::from_u32(tip_height), BlockHash(tip_hash))
                 } else {
-                    client
-                        .get_tree_state(service::BlockId {
+                    tokio::time::timeout(
+                        LWD_REQUEST_TIMEOUT,
+                        client.get_tree_state(service::BlockId {
                             height: u64::from(birthday_height),
                             hash: vec![],
-                        })
-                        .await
-                        .map_err(|e| format!("cannot fetch birthday tree state: {e}"))?
-                        .into_inner()
-                        .to_chain_state()
-                        .map_err(|e| format!("birthday tree state is invalid: {e}"))?
+                        }),
+                    )
+                    .await
+                    .map_err(|_| format!("timed out fetching birthday tree state from {lwd_url}"))?
+                    .map_err(|e| format!("cannot fetch birthday tree state: {e}"))?
+                    .into_inner()
+                    .to_chain_state()
+                    .map_err(|e| format!("birthday tree state is invalid: {e}"))?
                 };
                 let birthday = AccountBirthday::from_parts(birthday_state, None);
                 let (id, _usk) = wallet
