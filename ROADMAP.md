@@ -496,6 +496,19 @@
      1200 innerWidth (anchors plus every beat), stacked seeks at 800 (no
      regression), and before/after 1500px headless captures; gates green.
      DONE, pending owner eyeball.
+   - D-071 the door comes down to the title line and the peek measurement
+     is hardened against stale layouts (owner: the peek was not coming from
+     off screen, and the door's top belongs at the ZARCADE E level,
+     horizontal position unchanged). Grid align-items to start; the story
+     descends by calc(--doorRise + --titleLift), both stated as geometry,
+     the title's 26px margin promoted to a shared variable. Door top to
+     title top measured 0.1px on wide; phones untouched (stacked zeroes the
+     margin). The stale-peek class is fixed at the source: the script
+     re-measures on load, on fonts.ready and on every cycle's
+     animationiteration, on top of resize, because the owner's open tab
+     survived a deploy that moved the scene without firing resize. Poison
+     and heal test passes. Anchors and every beat re-seeked on wide; gates
+     green; after capture taken. DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 

@@ -60,17 +60,23 @@ export function Door() {
     };
   }, [reduced]);
 
-  // D-055, restaged by D-069: measure the resting spot once, and again on
-  // resize, so the peek comes from whichever screen edge is nearer at any
-  // window width. The hidden fraction is 56%: most of the body stays out of
-  // view, because that is what a peek is. The eye sits at ~46% of the
-  // figure's width, inside the hidden zone at that fraction, so the peek
-  // leans: the 16deg diagonal tilt written to --peekTilt below swings the
-  // head and eye around the corner into the visible sliver, hood first,
-  // like somebody craning around a doorframe. The fraction and the angle
-  // are tuned together by machine check: more hidden or less lean and the
-  // eye itself clips the screen edge. The machine check measures the eye's
-  // screen position during the peek and fails if it is offscreen.
+  // D-055, restaged by D-069, hardened by D-071: measure the resting spot,
+  // and re-measure whenever the layout can breathe: on resize, on window
+  // load, when the webfonts settle, and once per story cycle via the
+  // watcher's animationiteration. The cycle re-measure is the important
+  // one: the owner kept a tab open across a deploy that moved the scene
+  // (D-070) without firing resize, so the peek kept a stale translate and
+  // stopped mid-page fully visible instead of clipped at the edge. A peek
+  // variable may never outlive the layout it was measured from. The hidden
+  // fraction is 56%: most of the body stays out of view, because that is
+  // what a peek is. The eye sits at ~46% of the figure's width, inside the
+  // hidden zone at that fraction, so the peek leans: the 16deg diagonal
+  // tilt written to --peekTilt below swings the head and eye around the
+  // corner into the visible sliver, hood first, like somebody craning
+  // around a doorframe. The fraction and the angle are tuned together by
+  // machine check: more hidden or less lean and the eye itself clips the
+  // screen edge. The machine check measures the eye's screen position
+  // during the peek and fails if it is offscreen.
   useEffect(() => {
     if (reduced) return;
     const el = storyRef.current;
@@ -90,8 +96,17 @@ export function Door() {
       el.style.setProperty("--peekTilt", fromLeft ? "16deg" : "-16deg");
     };
     measure();
+    const watcherEl = el.querySelector(".gm-watcher");
+    const fontsReady = document.fonts ? document.fonts.ready.then(measure, () => {}) : null;
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    window.addEventListener("load", measure);
+    watcherEl?.addEventListener("animationiteration", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("load", measure);
+      watcherEl?.removeEventListener("animationiteration", measure);
+      if (fontsReady) fontsReady.catch(() => {});
+    };
   }, [reduced]);
 
   function enter() {

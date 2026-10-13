@@ -1189,7 +1189,14 @@ html[data-motion="less"] .gm-wMote2 {
      that cost was accepted with the owner's approval of the move. */
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 48px;
-  align-items: center;
+  /* D-071: start, not center, so the watch column's top is the text
+     column's top and the story's margin-top can place the door's top edge
+     at the title's top edge exactly. Centering used to float the scene
+     against the text height, which put the door above the title line.
+     --titleLift is the title's own top margin, shared with .gm-doorTitle
+     so the anchor stays true if the title's lift ever changes. */
+  align-items: start;
+  --titleLift: 26px;
 }
 
 .gm-doorSide {
@@ -1201,7 +1208,9 @@ html[data-motion="less"] .gm-wMote2 {
 
 .gm-doorTitle {
   position: relative;
-  margin: 26px 0 0;
+  /* D-071: the lift lives on the grid as --titleLift so the scene's
+     vertical anchor can read the same number instead of copying it. */
+  margin: var(--titleLift, 26px) 0 0;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: clamp(18px, 10cqi, 80px);
@@ -1306,6 +1315,12 @@ html[data-motion="less"] .gm-wMote2 {
   position: relative;
   width: fit-content;
   margin: 0 auto;
+  /* D-071: come down by exactly the door's rise above the figure box plus
+     the title's own lift, so the door's top edge sits level with the
+     title's top edge while the horizontal position stays where D-070 put
+     it. The stacked layout below zeroes this; phones keep their old
+     vertical staging. */
+  margin-top: calc(var(--doorRise) + var(--titleLift, 26px));
   --peekX: 400px;
   --peekFull: 720px;
   --peekTilt: -4deg;
@@ -1325,6 +1340,15 @@ html[data-motion="less"] .gm-wMote2 {
   --doorRight: -76px;
   --backH: 60px;
   --climbD: 31px;
+  /* D-071: the figure's own height at its fixed 150px width, and how far
+     the door's top edge rises above the figure box (the door's base offset
+     plus its height, minus the figure). The wide layout pushes the whole
+     scene down by exactly this rise, so the door's top lands level with
+     the title's top: the owner's vertical anchor, "the top of the door
+     will be at the level of the ZARCADE E", stated as geometry so both
+     breakpoints can compute it instead of guessing a pixel offset. */
+  --figH: 174px;
+  --doorRise: calc(var(--backH) + var(--climbD) + 2px + var(--doorH) - var(--figH));
 }
 
 /* D-067, rebuilt by D-068: the back platform's near edge. The watcher
@@ -1579,6 +1603,9 @@ html[data-motion="less"] .gm-wMote2 {
     --doorRight: -64px;
     --backH: 48px;
     --climbD: 24px;
+    /* D-071: the vertical descent is a wide-window anchor; phones keep the
+       vertical staging they already had. */
+    margin-top: 0;
   }
 }
 
