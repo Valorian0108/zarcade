@@ -589,12 +589,13 @@
     constant. First play already caught one leak: the open row's
     missing block number made it stand out by shape; D-077 states the
     block on every row and tests it. PENDING: owner playtest and
-    eyeball on the hood art and
-    the searchlight, then the go-live flip (crowd entry added, status
-    playable, three-hoods glyph).
+    eyeball on the hood art and the searchlight. D-078 built: rooms
+    live at /arcade/unseen and /arcade/crowd, a cabinet click opens
+    the room first, and cabinet two is lit for The Crowd with the
+    glyph named "crowd". PENDING: owner eyeball on the rooms and the
+    new crowd figure.
     Owner verdict on first full play: "this is dope, keep her"
-    (2026-10-13). The go-live flip now waits on D-078: one room per
-    game on the hub comes first, then the cabinet points at the room.
+    (2026-10-13).
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
     no wallet changes.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
