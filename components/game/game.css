@@ -1269,11 +1269,12 @@ html[data-motion="less"] .gm-wMote2 {
 
 /* ---------- the Watcher's slow ambient life (D-055) ----------
  * One story on a ~40s cycle, starting 6s after load so the landing
- * choreography finishes first: he stands idle (his own loops keep him
- * breathing), a small door appears on the back wall (D-067: a higher floor
- * line, smaller and paler than the front row), he walks upstage away from
- * the viewer, rising and shrinking with honest perspective, and steps
- * through, the door closes and fades, an empty beat
+ * choreography finishes first: he stands idle on the near edge of the
+ * raised back platform, in his depth size (D-068), a small door appears
+ * deeper on the platform, against the far wall, he walks across the
+ * platform toward it, climbing the platform's own depth and shrinking a
+ * few percent more on the way, and steps through, the door closes and
+ * fades, an empty beat
  * follows where the sign glows softer (gmSignSoft above), then the peek: he
  * slides in from the nearer screen edge until only hood and eye show, holds
  * the glance, slips away, and fades back at his resting spot.
@@ -1297,63 +1298,74 @@ html[data-motion="less"] .gm-wMote2 {
   --peekX: 400px;
   --peekFull: 720px;
   --peekTilt: -4deg;
-  /* D-062, restaged by D-067: the walk distance, the door's size and the
-     height of the back floor are geometry, not guesses. The figure is a
-     fixed 300px wide on this page, his cloak centre sits at 134px, and the
-     door centre follows from its offset, so each breakpoint states its
-     numbers once and every keyframe reads them. --backH is the depth cue
-     the whole staging hangs on: how far above the near floor the back
-     wall's floor line (and the door standing on it) sits. */
+  /* D-062, restaged by D-067 and D-068: the walk distance, the door's size
+     and the two heights of the back platform are geometry, not guesses. The
+     figure is a fixed 300px wide on this page, his cloak centre sits at
+     134px, and the door centre follows from its offset, so each breakpoint
+     states its numbers once and every keyframe reads them. --backH is the
+     platform's near edge (the seam the watcher lives on); --climbD is the
+     platform's own depth, the extra climb from the seam to the far wall
+     where the door stands. The walk crosses both, so every step moves him
+     away from the viewer and toward the door at once. */
   --walkX: 138px;
   --doorW: 88px;
   --doorH: 192px;
   --doorRight: -16px;
   --backH: 60px;
+  --climbD: 31px;
 }
 
-/* D-067: the back floor seam. The door stands on this line and the
-   watcher's feet climb to it, which is what turns "a door down the street"
-   into "a door at the back of the room": higher feet read as further away.
-   It is fainter than anything in front (atmospheric perspective), it
-   emerges from behind the watcher's robe (overlap), and it lives and dies
-   with the door because it reuses the door's own story animation, which
-   also means the less-motion end state hides it for free. */
+/* D-067, rebuilt by D-068: the back platform's near edge. The watcher
+   LIVES on this line: his feet meet it exactly (the +3px offset is his
+   transform origin lifting him at depth scale), and the door stands
+   deeper, against the far wall. The seam is permanent now, not a guest of
+   the door: the platform exists from load, so the less-motion picture is a
+   proper scene (him standing on his floor) instead of a floating figure.
+   It runs under and past him, fainter than anything in front (atmospheric
+   perspective), and emerges from behind his robe (overlap). */
 .gm-wStory::before {
   content: "";
   position: absolute;
-  left: 42%;
+  left: -6%;
   right: calc(var(--doorRight) - 44px);
-  bottom: calc(var(--backH) + 1px);
+  bottom: calc(var(--backH) + 3px);
   height: 1px;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(237, 182, 74, 0.2) 35% 75%,
+    rgba(237, 182, 74, 0.2) 12% 82%,
     transparent
   );
-  opacity: 0;
-  animation: gmMiniDoorStory 40s linear 6s infinite;
   pointer-events: none;
   z-index: 0;
 }
 
 .gm-door .gm-watcher {
   transform-origin: 50% 92%;
-  animation: gmWatcherStory 40s linear 6s infinite;
+  /* D-068: fill "both" matters. Under the less-motion rule the story
+     animation is fast-forwarded to its end, and without a fill mode the
+     transform would revert to none, dropping him back to the near floor
+     while the permanent seam floats through his robe. With "both" he holds
+     the 100% keyframe, which is his platform rest: the less-motion picture
+     is him standing on his own floor. It also covers the 6s landing delay
+     with the 0% keyframe, which is the same rest. */
+  animation: gmWatcherStory 40s linear 6s infinite both;
 }
 
-/* D-062, restaged by D-067: a door he can actually use, standing on the
-   BACK wall's floor line instead of his own. Smaller than the old front-row
-   door (192px against his 348px) and a step paler, because it is further
-   away; still layered BEHIND him so he passes in front of it and the frame
-   outlives him. Four parts: the frame with its threshold hairline, an inner
-   light that rises as he approaches, a leaf that swings open on its left
-   hinge, and the knob riding on the leaf. */
+/* D-062, restaged by D-067 and D-068: a door he can actually use, standing
+   on the back platform's FAR floor, against the wall, deeper than the
+   watcher's near edge by exactly --climbD (the +4px is his foot lift at
+   arrival scale, so his feet meet the door's base when he gets there).
+   Smaller than the old front-row door (192px against his 348px) and a step
+   paler, because it is further away; still layered BEHIND him so he passes
+   in front of it and the frame outlives him. Four parts: the frame with its
+   threshold hairline, an inner light that rises as he approaches, a leaf
+   that swings open on its left hinge, and the knob riding on the leaf. */
 
 .gm-wMiniDoor {
   position: absolute;
   right: var(--doorRight);
-  bottom: calc(var(--backH) + 4px);
+  bottom: calc(var(--backH) + var(--climbD) + 4px);
   width: var(--doorW);
   height: var(--doorH);
   border: 1px solid rgba(237, 182, 74, 0.38);
@@ -1422,31 +1434,33 @@ html[data-motion="less"] .gm-wMote2 {
 }
 
 @keyframes gmWatcherStory {
-  /* idle at rest, on the near floor */
-  0%, 32% { transform: translate(0px, 0px) scale(1); opacity: 1; }
-  36% { transform: translate(0px, 0px) scale(1); opacity: 1; }
-  /* the walk upstage (D-067): he leaves the near floor for the back wall's
-     floor, so he climbs --backH while crossing --walkX and shrinks with
-     honest perspective on the way. One lean per step; the bob gets smaller
-     as he gets further away. */
-  39% { transform: translate(calc(var(--walkX) * 0.25), calc(var(--backH) * -0.3 - 5px)) rotate(-1.6deg) scale(0.97); opacity: 1; }
-  42% { transform: translate(calc(var(--walkX) * 0.5), calc(var(--backH) * -0.55)) rotate(1.6deg) scale(0.94); opacity: 1; }
-  45% { transform: translate(calc(var(--walkX) * 0.75), calc(var(--backH) * -0.8 - 4px)) rotate(-1.6deg) scale(0.91); opacity: 1; }
-  48% { transform: translate(var(--walkX), calc(var(--backH) * -1)) rotate(0deg) scale(0.88); opacity: 1; }
+  /* idle at rest: a back-row resident (D-068). He lives on the platform's
+     near edge in his depth size, feet exactly on the seam. */
+  0%, 32% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
+  36% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
+  /* the walk: across the platform toward the far wall. He climbs the
+     platform's own depth (--climbD) and shrinks a few percent more on the
+     way, so every step moves him away from the viewer AND toward the door
+     at once. One lean per step; the bob gets smaller with distance. */
+  39% { transform: translate(calc(var(--walkX) * 0.25), calc(-1 * var(--backH) - var(--climbD) * 0.3 - 4px)) rotate(-1.4deg) scale(0.87); opacity: 1; }
+  42% { transform: translate(calc(var(--walkX) * 0.5), calc(-1 * var(--backH) - var(--climbD) * 0.55)) rotate(1.4deg) scale(0.86); opacity: 1; }
+  45% { transform: translate(calc(var(--walkX) * 0.75), calc(-1 * var(--backH) - var(--climbD) * 0.8 - 3px)) rotate(-1.4deg) scale(0.85); opacity: 1; }
+  48% { transform: translate(var(--walkX), calc(-1 * (var(--backH) + var(--climbD)))) rotate(0deg) scale(0.84); opacity: 1; }
   /* through the open leaf: the last shrink is him fitting the doorway */
-  52% { transform: translate(calc(var(--walkX) + 4px), calc(var(--backH) * -1)) scale(0.72); opacity: 0; }
-  60% { transform: translate(calc(var(--walkX) + 4px), calc(var(--backH) * -1)) scale(0.72); opacity: 0; }
-  /* reposition unseen, back on the near floor, fully offscreen past the nearer edge */
+  52% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
+  60% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
+  /* reposition unseen: down to the near floor, fully offscreen past the nearer edge */
   65% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 0; }
   66% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 1; }
-  /* the peek: slide in until only hood and eye show, hold, slip away */
+  /* the peek: full size on YOUR floor, the back-row resident suddenly huge
+     at the edge of your world, which is the punchline of the beat */
   70% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
   77% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
   81% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 1; }
   82% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 0; }
-  /* home again, unseen, then a slow fade back to the resting spot */
-  86% { transform: translate(0px, 0px); opacity: 0; }
-  90%, 100% { transform: translate(0px, 0px); opacity: 1; }
+  /* home again, unseen, then a slow fade back to his spot on the platform */
+  86% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 0; }
+  90%, 100% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
 }
 
 @keyframes gmMiniDoorStory {
@@ -1540,15 +1554,16 @@ html[data-motion="less"] .gm-wMote2 {
     width: 60%;
   }
 
-  /* D-062, restaged by D-067: on the stacked layout the door tucks closer,
-     narrows, and the back floor sits lower, so the depth still reads on a
-     small phone width without eating the scene. */
+  /* D-062, restaged by D-067 and D-068: on the stacked layout the door
+     tucks closer and narrows, and both platform heights drop, so the depth
+     still reads on a small phone width without eating the scene. */
   .gm-wStory {
     --walkX: 140px;
     --doorW: 76px;
     --doorH: 168px;
     --doorRight: -12px;
     --backH: 48px;
+    --climbD: 24px;
   }
 }
 

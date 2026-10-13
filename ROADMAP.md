@@ -456,6 +456,22 @@
      translate(--walkX, -backH) with a bob that shrinks with distance.
      Beats, percentages, peek and home unchanged. Verified by seek; gates
      green. DONE, pending owner eyeball.
+   - D-068 the watcher moved into the background (owner eyeball on D-067:
+     the walk looked "dropped" into the scenery; his own follow-up note:
+     door and watcher on one line would make the entry side-by-side, not
+     backwards). The back-row resident, in two parts: he now rests ON the
+     platform's near edge in his depth size (scale 0.88, feet on the seam
+     within a pixel), and the platform gained real depth (--climbD: the
+     door stands 31px deeper against the far wall, 24px stacked). The walk
+     is a true recession: he crosses the platform climbing its depth and
+     shrinking to 0.84, so every step moves him away from the viewer and
+     toward the door at once. The seam is permanent (exists from load; the
+     less-motion picture is him standing on his floor). The 0.72 doorway
+     shrink, leaf beats, sign softening and full-size peek are unchanged;
+     the peek now reads as the back-row resident suddenly huge at the edge
+     of your world. Verified by seek on the stacked breakpoint (feet on
+     seam, feet on threshold, cloak centre inside the door span); gates
+     green. DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
