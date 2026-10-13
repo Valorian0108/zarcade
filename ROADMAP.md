@@ -573,6 +573,8 @@
   - Cabinet two: The Crowd. No new backend; reuses the send route and
     GameFrame; three challenges with real arcade records; the second
     challenge is impossible by design, and that is the lesson.
+    Scoping decision D-074 written 2026-10-13, AWAITING OWNER APPROVAL
+    before any build.
   - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
     no wallet changes.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
