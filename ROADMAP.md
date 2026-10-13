@@ -483,6 +483,19 @@
      shows. Other Watcher instances untouched. Verified by seek (feet on
      seam and on threshold within a pixel, eye onscreen at the peek with
      most of the body offscreen); gates green. DONE, pending owner eyeball.
+   - D-070 the wide scene hugs the text column (owner: "do build 1 as a
+     proper architect", choosing both grid changes after seeing the first
+     full-view capture). justify-self center to start kills the 143px dead
+     air the D-069 shrink exposed; columns 1.35fr to 1.1fr pull the watch
+     column right after the text. In the 1120 box the watcher now starts one
+     grid gap past the title's last letter and covers the footer's G, the
+     owner's two anchors, by structure not pixels. Title pays about 9
+     percent of its wide size (it sizes by column, D-053), accepted. Phones
+     keep their old centered staging via an explicit stacked override. Peek
+     untouched: edge-pinned by measurement. Verified by real wide seeks at
+     1200 innerWidth (anchors plus every beat), stacked seeks at 800 (no
+     regression), and before/after 1500px headless captures; gates green.
+     DONE, pending owner eyeball.
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 

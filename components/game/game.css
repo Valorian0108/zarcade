@@ -1183,7 +1183,11 @@ html[data-motion="less"] .gm-wMote2 {
   margin: 0 auto;
   padding: 24px 24px 96px;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  /* D-070: 1.35fr became 1.1fr so the watch column begins right after the
+     text instead of a whole fraction later. The title sizes by its column
+     (D-053) and gives up about 9 percent of its wide-window size for this;
+     that cost was accepted with the owner's approval of the move. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 48px;
   align-items: center;
 }
@@ -1261,8 +1265,15 @@ html[data-motion="less"] .gm-wMote2 {
     gmBtnAttract 4.5s ease-in-out 4.6s infinite;
 }
 
+/* D-070: the scene hugs the start of its column, so it stands next to the
+   text instead of floating in the middle of dead air. The dead air appeared
+   with the D-069 shrink: centering was invisible while the figure filled the
+   column, and stranded him once he got small. In the fixed 1120 box this
+   puts his left edge one grid gap past the title's last letter and his body
+   over the footer's G, the owner's two chosen anchors. The stacked layout
+   below restores the old centering for phones. */
 .gm-doorWatch {
-  justify-self: center;
+  justify-self: start;
   opacity: 0;
   animation: gmRise 0.9s ease 1.25s forwards;
 }
@@ -1553,6 +1564,9 @@ html[data-motion="less"] .gm-wMote2 {
   .gm-doorWatch {
     order: 2;
     width: 60%;
+    /* D-070: phones keep the staging they already had; only wide windows
+       hug the text column. */
+    justify-self: center;
   }
 
   /* D-062, restaged by D-067 and D-068: on the stacked layout the door
