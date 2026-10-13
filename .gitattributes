@@ -1,0 +1,4 @@
+# Shell scripts must reach the Linux server with LF endings, or bash
+# refuses to run them ("bad interpreter: /bin/bash^M"). Pinned here so no
+# Windows checkout can ever flip them.
+*.sh text eol=lf

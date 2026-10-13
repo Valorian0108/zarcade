@@ -443,6 +443,31 @@
 - Definition of done: all six verified by machine in both motion modes, gates
   green, and the owner has seen the story cycle and the logo and reacted.
 
+## Phase P — The arcade gets a home of its own
+- Goal: Zarcade live at zarcade.obestlink.com on a Hetzner machine (D-066),
+  the wallet internal-only, fresh faucet-funded seed, one real public round
+  proven end to end.
+- Tasks:
+  - Owner: Hetzner account (PayPal or bank, no credit card), order an
+    Ubuntu 24.04 machine with at least 4GB of memory, console firewall
+    (TCP 22/80/443), root password. Walkthrough: deploy/SETUP-GUIDE.md.
+  - Owner decision pending: repo visibility (open item, raised 2026-10-13);
+    the server clones from GitHub and the footer link currently 404s for
+    visitors while the repo is private. History verified clean first.
+  - Kit built: deploy/setup.sh (tools, 4G swap, Rust, Node 22, release
+    build of the sidecar, website build, two systemd services with a
+    random admin token, Caddy with automatic HTTPS, ufw + fail2ban) and
+    the guide above (faucet and pot-split commands, Namecheap DNS,
+    verification, upkeep, troubleshooting).
+  - Setup session: clone + script, wallet generates its own fresh seed on
+    first run, Zakura NU7 claim, split the pot into 40 notes.
+  - Namecheap: one A record, host zarcade, reversible, nothing else touched.
+  - Prove it: one full hidden round at the public address with a real txid
+    on the canonical testnet; both halves survive a machine reboot.
+- Definition of done: a stranger's browser can play a real round at
+  zarcade.obestlink.com, the wallet never faces the internet, the machine
+  reboots clean, and the session is logged in DECISIONS.md.
+
 ---
 
 **Rule:** We do not start Phase N+1 until Phase N's definition of done is met
