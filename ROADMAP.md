@@ -444,6 +444,10 @@
   green, and the owner has seen the story cycle and the logo and reacted.
 
 ## Phase P — The arcade gets a home of its own
+- Status: **PARKED by owner 2026-10-13.** The kit is built, verified and
+  pushed; it resumes on the owner's word. With the repo staying private,
+  the deploy-key appendix in deploy/SETUP-GUIDE.md is the active path for
+  the server clone when it does.
 - Goal: Zarcade live at zarcade.obestlink.com on a Hetzner machine (D-066),
   the wallet internal-only, fresh faucet-funded seed, one real public round
   proven end to end.
@@ -467,6 +471,27 @@
 - Definition of done: a stranger's browser can play a real round at
   zarcade.obestlink.com, the wallet never faces the internet, the machine
   reboots clean, and the session is logged in DECISIONS.md.
+
+## Phase Q — The cabinets fill up (PROPOSED 2026-10-13, owner approval per game)
+- Goal: the cheap honest games from the 2026-10-12 menu, one at a time,
+  each with a scoping decision, a build, machine verification, and a real
+  testnet payment round end to end.
+- Tasks (proposed order):
+  - Footer truth fix (open item in DECISIONS.md): copy and link match the
+    private-repo reality before anything else ships on top of it.
+  - Cabinet two: The Crowd. No new backend; reuses the send route and
+    GameFrame; three challenges with real arcade records; the second
+    challenge is impossible by design, and that is the lesson.
+  - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
+    no wallet changes.
+  - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
+    cheap on the existing rails.
+  - Not scheduled: Auditor's Key and Vault Run (new Rust wallet work),
+    The Sealed Letter (conflicts with the D-025 memo guardrail),
+    Double-Spend Heist (cannot be staged honestly).
+- Definition of done per game: status flipped in lib/games.ts, a glyph
+  named, all four gates green, a real hidden payment round played end to
+  end, machine-verified beats, and the owner has played it and reacted.
 
 ---
 
