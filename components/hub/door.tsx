@@ -43,7 +43,8 @@ const PEEK_LEAN_DEG = 16;
  * to calm at ~2100ms. That reuses the approved mood machinery.
  *
  * After the landing the Watcher lives (D-055, restaged by D-062, D-067 and
- * D-068): one slow ambient story on a ~40s cycle. He stands idle on the
+ * D-068): one slow ambient story on a ~30s cycle (D-091, cut from 40s by
+ * trimming only the waiting). He stands idle on the
  * near edge of the raised back platform, in his depth size, a real door
  * appears deeper on the platform, against the far wall (tall enough to
  * enter, behind him in layer order), its inner light rises as he walks
@@ -51,7 +52,8 @@ const PEEK_LEAN_DEG = 16;
  * few percent more, the leaf swings open, he steps in shrinking to fit, the
  * leaf shuts behind him, the closed door holds a beat
  * and fades, the sign glows softer for an empty beat, then he peeks in from
- * the nearest screen edge (hood and eye only) and slips away, fading back to
+ * behind the room's nearer wall (hood and eye only) and slips away, fading
+ * back to
  * his resting spot. The peek is the only JS part: one effect measures where
  * the figure rests and writes three CSS variables (--peekX, --peekFull,
  * --peekTilt); the stylesheet carries safe fallbacks, so the story still
@@ -111,8 +113,14 @@ export function Door() {
     const measure = () => {
       const r = el.getBoundingClientRect();
       if (r.width === 0) return;
-      const toLeft = r.left;
-      const toRight = window.innerWidth - r.right;
+      // D-090 (proposed): measure against the room box, not the window.
+      // At and below 1120 the box IS the window, so every approved number
+      // stands untouched; above it the box is fixed, so the peek hold is
+      // identical at every zoom and the hidden half clips at the room's
+      // own wall instead of floating in the margin beyond it.
+      const room = el.closest(".gm-doorMain")?.getBoundingClientRect();
+      const toLeft = room ? r.left - room.left : r.left;
+      const toRight = room ? room.right - r.right : window.innerWidth - r.right;
       const fromLeft = toLeft <= toRight;
       const hidden = r.width * PEEK_HIDDEN_FRACTION;
       const peek = fromLeft ? -(toLeft + hidden) : toRight + hidden;
@@ -124,6 +132,16 @@ export function Door() {
         "--peekTilt",
         fromLeft ? `${PEEK_LEAN_DEG}deg` : `-${PEEK_LEAN_DEG}deg`,
       );
+      // The floor line in root coordinates, so the wall-to-wall band sits
+      // at his feet without living inside the clipped room box.
+      const doorEl = el.closest<HTMLElement>(".gm-door");
+      if (doorEl) {
+        const d = doorEl.getBoundingClientRect();
+        doorEl.style.setProperty(
+          "--floorY",
+          `${Math.round(r.bottom - d.top)}px`,
+        );
+      }
     };
     measure();
     const watcherEl = el.querySelector(".gm-watcher");
@@ -161,6 +179,15 @@ export function Door() {
 
   return (
     <div className="gm-root gm-door">
+      {/* The near floor, wall to wall (owner zoom report 2026-10-14,
+          re-anchored by the D-090 proposal). It lives on the room root,
+          outside the clipped room box, so it can span the whole window
+          while the box clips the peek at its own wall: he hides behind a
+          wall and stands on a floor at every zoom. Drawn only above 1120;
+          at and below that the box fills the window and the approved look
+          stands untouched. Its vertical position is --floorY, written by
+          the same effect that measures the peek. */}
+      <span className="gm-wFloor" aria-hidden="true" />
       <p className="gm-banner">
         Everything here runs on the Zcash test network with practice money.
         Nothing costs anything.

@@ -1154,6 +1154,10 @@ html[data-motion="less"] .gm-wMote2 {
 .gm-door {
   display: flex;
   flex-direction: column;
+  /* D-090 (proposed): the root carries --floorY so the wall-to-wall floor
+     band can sit at the Watcher's feet while living outside the clipped
+     room box. */
+  position: relative;
   /* D-055: the story cycle slides the Watcher toward (and past) a screen
      edge; clip so that can never produce a horizontal scrollbar. `clip`,
      not `hidden`, so no scroll container is created. */
@@ -1182,6 +1186,12 @@ html[data-motion="less"] .gm-wMote2 {
   max-width: 1120px;
   margin: 0 auto;
   padding: 24px 24px 96px;
+  /* D-090 (proposed): the room box clips the peek at its own edge, so the
+     hidden half goes behind the room's wall at every zoom instead of
+     floating in the margin. At and below 1120 the box is the window, so
+     this is exactly the old screen-edge clip the owner approved. */
+  position: relative;
+  overflow-x: clip;
   display: grid;
   /* D-070: 1.35fr became 1.1fr so the watch column begins right after the
      text instead of a whole fraction later. The title sizes by its column
@@ -1218,8 +1228,8 @@ html[data-motion="less"] .gm-wMote2 {
   letter-spacing: 0.14em;
   color: var(--gold);
   /* D-055: while the Watcher is away and the room is empty, the sign glows
-     a shade softer. Same 40s cycle, same start delay. */
-  animation: gmSignSoft 40s linear 6s infinite;
+     a shade softer. Same 30s cycle, same start delay. */
+  animation: gmSignSoft 30s linear 6s infinite;
 }
 
 .gm-doorTitleBase {
@@ -1288,7 +1298,10 @@ html[data-motion="less"] .gm-wMote2 {
 }
 
 /* ---------- the Watcher's slow ambient life (D-055) ----------
- * One story on a ~40s cycle, starting 6s after load so the landing
+ * One story on a ~30s cycle (D-091: cut from 40s by taking the savings out
+ * of the standing rest and the empty-room beat only, so every action beat
+ * keeps the seconds the owner approved), starting 6s after load so the
+ * landing
  * choreography finishes first: he stands idle on the near edge of the
  * raised back platform, in his depth size (D-068), a small door appears
  * deeper on the platform, against the far wall, he walks across the
@@ -1296,18 +1309,19 @@ html[data-motion="less"] .gm-wMote2 {
  * few percent more on the way, and steps through, the door closes and
  * fades, an empty beat
  * follows where the sign glows softer (gmSignSoft above), then the peek: he
- * slides in from the nearer screen edge until only hood and eye show, holds
+ * slides in from behind the nearer room wall until only hood and eye show,
+ * holds
  * the glance, slips away, and fades back at his resting spot.
  *
  * Truth anchors (D-042): the watcher can step out of your view; there is a
  * moment with nobody watching; and the public never really stops watching,
  * which is the punchline the peek lands. No beat is faster than ~1.4s and
- * the whole cycle is 40s, well past the door's 4s floor.
+ * the whole cycle is 30s, well past the door's 4s floor.
  *
  * The peek distances (--peekX partial, --peekFull fully offscreen, --peekTilt
  * the head-turn lean) are measured by one effect in door.tsx against the
- * resting rect of .gm-wStory. The fallbacks below suit a wide window where
- * the right edge is nearer. Under "less" motion the global rule stops every
+ * resting rect of .gm-wStory against the room box (D-090 proposed). The
+ * fallbacks below suit a wide room where the right wall is nearer. Under "less" motion the global rule stops every
  * animation at its end state: the Watcher stands at rest, the little door is
  * invisible, the sign is at full brightness. */
 
@@ -1380,6 +1394,99 @@ html[data-motion="less"] .gm-wMote2 {
   z-index: 0;
 }
 
+/* The near floor, wall to wall (owner zoom report, 2026-10-14). On windows
+   wider than the 1120 box the room used to end at the box while the peek
+   still arrived from the true screen edge, so the hood and eye floated in
+   empty dark with no ground and no wall: the peek read as disfigured. This
+   band draws the near floor across the whole window, which makes the screen
+   edge a wall again at any zoom, and the peeking Watcher stands on it
+   exactly where his feet land (the story box bottom). It is 300vw wide and
+   centred on the scene so it always reaches both walls no matter where the
+   box sits; .gm-door clips the overflow. Gated above 1120px because at and
+   below that the box already fills the window and the approved look stands
+   untouched, phones included. */
+.gm-wFloor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--floorY, 100%);
+  height: 160px;
+  margin-top: -1px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(237, 182, 74, 0.14) 0 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      180deg,
+      rgba(29, 24, 48, 0.55),
+      rgba(29, 24, 48, 0) 85%
+    );
+  pointer-events: none;
+  z-index: 0;
+  display: none;
+}
+
+@media (min-width: 1121px) {
+  .gm-wFloor {
+    display: block;
+  }
+}
+
+/* The room's side walls (D-090 proposed, restaged after the owner's crop
+   showed the first attempt as stray floating bars). A wall must stand on
+   something: these rise FROM the floor line, stop a door and a half tall,
+   and fade out at the top, so they read as architecture instead of bars
+   pasted in mid-air. They sit exactly at the room box edges, which is the
+   line the box clips the peek at, so the hidden half of the Watcher goes
+   behind a wall you can see. Root-level, like the floor band, and only
+   above 1120: below that the box fills the window and the screen edge does
+   the hiding, exactly as approved. */
+.gm-door::before,
+.gm-door::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  top: calc(var(--floorY, 100%) - 340px);
+  height: 340px;
+  pointer-events: none;
+  z-index: 3;
+  display: none;
+  mask-image: linear-gradient(180deg, transparent, #000 26% 88%, transparent);
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent,
+    #000 26% 88%,
+    transparent
+  );
+}
+.gm-door::before {
+  left: calc(50% - 560px);
+  background: linear-gradient(
+    90deg,
+    rgba(237, 182, 74, 0.12) 0 1px,
+    rgba(8, 6, 12, 0.55),
+    transparent
+  );
+}
+.gm-door::after {
+  right: calc(50% - 560px);
+  background: linear-gradient(
+    270deg,
+    rgba(237, 182, 74, 0.12) 0 1px,
+    rgba(8, 6, 12, 0.55),
+    transparent
+  );
+}
+
+@media (min-width: 1121px) {
+  .gm-door::before,
+  .gm-door::after {
+    display: block;
+  }
+}
+
 .gm-door .gm-watcher {
   transform-origin: 50% 92%;
   /* D-068: fill "both" matters. Under the less-motion rule the story
@@ -1389,7 +1496,7 @@ html[data-motion="less"] .gm-wMote2 {
      the 100% keyframe, which is his platform rest: the less-motion picture
      is him standing on his own floor. It also covers the 6s landing delay
      with the 0% keyframe, which is the same rest. */
-  animation: gmWatcherStory 40s linear 6s infinite both;
+  animation: gmWatcherStory 30s linear 6s infinite both;
 }
 
 /* D-062, restaged by D-067 and D-068: a door he can actually use, standing
@@ -1417,7 +1524,7 @@ html[data-motion="less"] .gm-wMote2 {
   opacity: 0;
   transform: scale(0.86);
   transform-origin: bottom center;
-  animation: gmMiniDoorStory 40s linear 6s infinite;
+  animation: gmMiniDoorStory 30s linear 6s infinite;
   pointer-events: none;
   z-index: 0;
 }
@@ -1449,7 +1556,7 @@ html[data-motion="less"] .gm-wMote2 {
     transparent
   );
   opacity: 0.15;
-  animation: gmDoorGlow 40s linear 6s infinite;
+  animation: gmDoorGlow 30s linear 6s infinite;
 }
 
 .gm-wMiniLeaf {
@@ -1459,7 +1566,7 @@ html[data-motion="less"] .gm-wMote2 {
   background: linear-gradient(180deg, #1d1830 0%, #120e1d 100%);
   border: 1px solid rgba(237, 182, 74, 0.28);
   transform-origin: left center;
-  animation: gmDoorLeaf 40s linear 6s infinite;
+  animation: gmDoorLeaf 30s linear 6s infinite;
 }
 
 .gm-wMiniKnob {
@@ -1475,62 +1582,66 @@ html[data-motion="less"] .gm-wMote2 {
 
 @keyframes gmWatcherStory {
   /* idle at rest: a back-row resident (D-068). He lives on the platform's
-     near edge in his depth size, feet exactly on the seam. */
-  0%, 32% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
-  36% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
-  /* the walk: across the platform toward the far wall. He climbs the
-     platform's own depth (--climbD) and shrinks a few percent more on the
-     way, so every step moves him away from the viewer AND toward the door
-     at once. One lean per step; the bob gets smaller with distance. */
-  39% { transform: translate(calc(var(--walkX) * 0.25), calc(-1 * var(--backH) - var(--climbD) * 0.3 - 4px)) rotate(-1.4deg) scale(0.87); opacity: 1; }
-  42% { transform: translate(calc(var(--walkX) * 0.5), calc(-1 * var(--backH) - var(--climbD) * 0.55)) rotate(1.4deg) scale(0.86); opacity: 1; }
-  45% { transform: translate(calc(var(--walkX) * 0.75), calc(-1 * var(--backH) - var(--climbD) * 0.8 - 3px)) rotate(-1.4deg) scale(0.85); opacity: 1; }
-  48% { transform: translate(var(--walkX), calc(-1 * (var(--backH) + var(--climbD)))) rotate(0deg) scale(0.84); opacity: 1; }
-  /* through the open leaf: the last shrink is him fitting the doorway */
-  52% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
-  60% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
-  /* reposition unseen: down to the near floor, fully offscreen past the nearer edge */
-  65% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 0; }
-  66% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 1; }
-  /* the peek: full size on YOUR floor, the back-row resident suddenly huge
-     at the edge of your world, which is the punchline of the beat */
-  70% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
-  77% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
-  81% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 1; }
-  82% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 0; }
-  /* home again, unseen, then a slow fade back to his spot on the platform */
-  86% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 0; }
-  90%, 100% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
+     near edge in his depth size, feet exactly on the seam. D-091: the rest
+     is the budget the 30s cycle took its savings from: 7s instead of 14.4. */
+  0%, 23.33% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
+  /* the walk: 7.0s to 11.8s, four steps at the approved 1.2s each. He
+     climbs the platform's own depth (--climbD) and shrinks a few percent
+     more on the way, so every step moves him away from the viewer AND
+     toward the door at once. One lean per step; the bob gets smaller with
+     distance. */
+  27.33% { transform: translate(calc(var(--walkX) * 0.25), calc(-1 * var(--backH) - var(--climbD) * 0.3 - 4px)) rotate(-1.4deg) scale(0.87); opacity: 1; }
+  31.33% { transform: translate(calc(var(--walkX) * 0.5), calc(-1 * var(--backH) - var(--climbD) * 0.55)) rotate(1.4deg) scale(0.86); opacity: 1; }
+  35.33% { transform: translate(calc(var(--walkX) * 0.75), calc(-1 * var(--backH) - var(--climbD) * 0.8 - 3px)) rotate(-1.4deg) scale(0.85); opacity: 1; }
+  39.33% { transform: translate(var(--walkX), calc(-1 * (var(--backH) + var(--climbD)))) rotate(0deg) scale(0.84); opacity: 1; }
+  /* through the open leaf: 11.8s to 13.4s, the last shrink is him fitting
+     the doorway */
+  44.67% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
+  52.67% { transform: translate(calc(var(--walkX) + 4px), calc(-1 * (var(--backH) + var(--climbD)))) scale(0.72); opacity: 0; }
+  /* reposition unseen: down to the near floor, fully hidden past the room
+     wall by 17.0s, visible again at 17.4s */
+  56.67% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 0; }
+  58% { transform: translate(var(--peekFull), 0px) scale(1); opacity: 1; }
+  /* the peek: slide in 17.4 to 19.0, hold 19.0 to 21.8, slip out 21.8 to
+     23.4, all at the approved lengths, full size on YOUR floor */
+  63.33% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
+  72.67% { transform: translate(var(--peekX), 0px) rotate(var(--peekTilt)); opacity: 1; }
+  78% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 1; }
+  79.33% { transform: translate(var(--peekFull), 0px) rotate(0deg); opacity: 0; }
+  /* home again, unseen, then a slow fade back to his spot on the platform
+     by 26.5s, rest to 30 */
+  84% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 0; }
+  88.33%, 100% { transform: translate(0px, calc(-1 * var(--backH))) scale(0.88); opacity: 1; }
 }
 
 @keyframes gmMiniDoorStory {
-  0%, 32% { opacity: 0; transform: scale(0.86); }
-  36%, 62% { opacity: 1; transform: scale(1); }
-  66%, 100% { opacity: 0; transform: scale(0.9); }
+  0%, 19.33% { opacity: 0; transform: scale(0.86); }
+  23.33%, 52.67% { opacity: 1; transform: scale(1); }
+  58%, 100% { opacity: 0; transform: scale(0.9); }
 }
 
 /* the leaf: shut while he walks, open as he arrives, shut behind him with a
    small settle so the close has weight */
 @keyframes gmDoorLeaf {
-  0%, 46% { transform: scaleX(1); }
-  50%, 52% { transform: scaleX(0.12); }
-  56% { transform: scaleX(1.04); }
-  58%, 100% { transform: scaleX(1); }
+  0%, 36.67% { transform: scaleX(1); }
+  42%, 44.67% { transform: scaleX(0.12); }
+  50% { transform: scaleX(1.04); }
+  52.67%, 100% { transform: scaleX(1); }
 }
 
 /* the inner light: the door knows he is coming */
 @keyframes gmDoorGlow {
-  0%, 32% { opacity: 0.15; }
-  36% { opacity: 0.22; }
-  48%, 52% { opacity: 0.85; }
-  56% { opacity: 0.35; }
-  62%, 100% { opacity: 0.15; }
+  0%, 19.33% { opacity: 0.15; }
+  23.33% { opacity: 0.22; }
+  39.33%, 44.67% { opacity: 0.85; }
+  50% { opacity: 0.35; }
+  58%, 100% { opacity: 0.15; }
 }
 
 @keyframes gmSignSoft {
-  0%, 52% { filter: brightness(1); }
-  57%, 63% { filter: brightness(0.85); }
-  68%, 100% { filter: brightness(1); }
+  0%, 44.67% { filter: brightness(1); }
+  51.33%, 56.67% { filter: brightness(0.85); }
+  60.67%, 100% { filter: brightness(1); }
 }
 
 /* ---------- the quiet footer (D-056) ----------
