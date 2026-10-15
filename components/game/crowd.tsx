@@ -6,7 +6,6 @@ import { GameFrame, type FrameReceipt } from "@/components/game/frame";
 import type { WatcherMood } from "@/components/watcher";
 import { formatTaz } from "@/lib/zcash/format";
 import {
-  C2_TARGET_ZATOSHIS,
   C3_CHOICES,
   CROWD_COPY,
   CROWD_RECORDS,
@@ -16,7 +15,6 @@ import {
   LEAK_OPEN,
   LEAK_SEALED,
   shuffled,
-  shieldedRowsWithAmount,
   type CrowdRecord,
 } from "@/lib/crowd";
 
@@ -27,10 +25,14 @@ import {
  * then say why the open row is open at all.
  *
  * The stage is the book: a row of hoods, the crowd, one per record, and a
- * line per record carrying only public metadata (txid, block, explorer
- * link) until its challenge reveals more. A searchlight sweeps the hoods
- * once per challenge; only the open hood ever lights up. Under "less"
- * motion the global rule stills the sweep and every fact stays readable.
+ * line per record carrying only a shortened id and its block until its
+ * challenge reveals more; the explorer link joins only when the row's truth
+ * does (D-096), so the hunt cannot be solved from outside the book. A
+ * searchlight sweeps the hoods once per challenge; only the open hood ever
+ * lights up. Feedback the room speaks arrives lit in gold (D-096), challenge
+ * two springs its trap in two beats (a no that keeps hope, then the gotcha),
+ * and challenge three shows the open row itself. Under "less" motion the
+ * global rule stills all of it and every fact stays readable.
  *
  * No money moves in this game. The payments it reads are real and already
  * mined; the book arrives from the page, served from the wallet's live
@@ -84,10 +86,15 @@ function RecordLine({
   record,
   lit,
   onPick,
+  showLink = false,
 }: {
   record: CrowdRecord;
   lit: boolean;
   onPick?: () => void;
+  /** The explorer link arrives only once this row's truth is on the table
+   *  (D-096): a live link during the hunt would solve challenge one from
+   *  outside the book. Verification is deferred, never denied. */
+  showLink?: boolean;
 }) {
   return (
     <li className="gm-crowdLine">
@@ -104,9 +111,11 @@ function RecordLine({
           {record.block !== null ? `block ${record.block}` : "landed"}
         </span>
       </button>
-      <a className="gm-receiptLink" href={record.url} target="_blank" rel="noreferrer">
-        explorer
-      </a>
+      {showLink ? (
+        <a className="gm-receiptLink" href={record.url} target="_blank" rel="noreferrer">
+          explorer
+        </a>
+      ) : null}
     </li>
   );
 }
@@ -116,7 +125,8 @@ export function Crowd() {
   const [step, setStep] = useState<Step>("setup");
   const [mood, setMood] = useState<WatcherMood>("calm");
   const [c1Line, setC1Line] = useState<string | null>(null);
-  const [c2Tries, setC2Tries] = useState(0);
+  const [c2Picks, setC2Picks] = useState<readonly string[]>([]);
+  const [c2Line, setC2Line] = useState<string | null>(null);
   const [c3Line, setC3Line] = useState<string | null>(null);
   const [found, setFound] = useState<CrowdRecord | null>(null);
   const flare = useRef<number | null>(null);
@@ -201,16 +211,26 @@ export function Crowd() {
     setC1Line(CROWD_COPY.c1Sealed);
   };
 
+  // Challenge two's trap (D-096), in the owner's two beats: the first sealed
+  // row answers with a no that keeps hope alive, the second springs the
+  // gotcha and the lantern flare. Re-clicking a row never advances a beat,
+  // and once both are down the reveal is the only door left.
   const pickC2 = (record: CrowdRecord) => {
     if (!judgePointAtAmount(rows, record.id)) return;
-    setC2Tries((n) => n + 1);
-  };
-
-  const admit = () => {
-    // You understood, and the public noticed: one lantern flare, then calm.
+    if (c2Picks.length >= 2) return;
+    if (c2Picks.includes(record.id)) {
+      setC2Line(CROWD_COPY.c2Same);
+      return;
+    }
+    const next = [...c2Picks, record.id];
+    setC2Picks(next);
+    if (next.length === 1) {
+      setC2Line(CROWD_COPY.c2First);
+      return;
+    }
+    setC2Line(CROWD_COPY.c2Gotcha);
     setMood("alert");
     flare.current = window.setTimeout(() => setMood("calm"), 2100);
-    setStep("c2reveal");
   };
 
   const pickC3 = (choiceId: string) => {
@@ -220,7 +240,16 @@ export function Crowd() {
       setStep("c3reveal");
       return;
     }
-    setC3Line(CROWD_COPY.c3Wrong);
+    // Every wrong answer is refuted with evidence the book itself holds
+    // (D-096): the block answer dies on the sealed rows' own block numbers,
+    // the tiny answer dies on challenge two's 1,000-zatoshi proof.
+    setC3Line(
+      result.choice.id === "block"
+        ? CROWD_COPY.c3WrongBlock
+        : result.choice.id === "tiny"
+          ? CROWD_COPY.c3WrongTiny
+          : CROWD_COPY.c3Wrong,
+    );
   };
 
   const receipts: FrameReceipt[] = rows.map((record) => ({
@@ -259,7 +288,13 @@ export function Crowd() {
                 <RecordLine key={record.id} record={record} lit={false} onPick={() => pickC1(record)} />
               ))}
             </ul>
-            {c1Line ? <p className="gm-callSub">{c1Line}</p> : null}
+            <div role="status" aria-live="polite">
+              {c1Line ? (
+                <p key={c1Line} className="gm-callSub gm-msgIn">
+                  {c1Line}
+                </p>
+              ) : null}
+            </div>
           </>
         );
       case "c1found":
@@ -272,7 +307,12 @@ export function Crowd() {
             </div>
             <ul className="gm-crowdList">
               {rows.map((record) => (
-                <RecordLine key={record.id} record={record} lit={record.kind === "open"} />
+                <RecordLine
+                  key={record.id}
+                  record={record}
+                  lit={record.kind === "open"}
+                  showLink={record.kind === "open"}
+                />
               ))}
             </ul>
             {found ? (
@@ -303,17 +343,29 @@ export function Crowd() {
             </div>
             <ul className="gm-crowdList">
               {sealedRecords.map((record) => (
-                <RecordLine key={record.id} record={record} lit={false} onPick={() => pickC2(record)} />
+                <RecordLine
+                  key={record.id}
+                  record={record}
+                  lit={false}
+                  showLink
+                  onPick={() => pickC2(record)}
+                />
               ))}
             </ul>
-            {c2Tries > 0 ? <p className="gm-callSub">{CROWD_COPY.c2Fail}</p> : null}
+            <div role="status" aria-live="polite">
+              {c2Line ? (
+                <p key={c2Line} className="gm-callSub gm-msgIn">
+                  {c2Line}
+                </p>
+              ) : null}
+            </div>
             <div className="gm-actions" style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}>
-              {c2Tries > 0 ? (
-                <button type="button" className="gm-btnPrimary" onClick={admit}>
-                  {CROWD_COPY.c2Admit}
+              {c2Picks.length >= 2 ? (
+                <button type="button" className="gm-btnPrimary" onClick={() => setStep("c2reveal")}>
+                  See what that means
                 </button>
               ) : (
-                <p className="gm-callSub">Pick a row, or say the true thing.</p>
+                <p className="gm-callSub">Pick a row.</p>
               )}
             </div>
           </>
@@ -321,8 +373,10 @@ export function Crowd() {
       case "c2reveal":
         return (
           <>
-            <div className="gm-goalCard">
-              <p className="gm-goalLabel">What you pinned down</p>
+            <div className="gm-goalCard gm-cardIn">
+              <p className="gm-goalLabel">What just happened</p>
+              <p className="gm-goalText">{CROWD_COPY.c2Reveal}</p>
+              <p className="gm-goalText">{CROWD_COPY.c2Every}</p>
               <p className="gm-goalText">{CROWD_COPY.c2Card}</p>
             </div>
             <div className="gm-actions" style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}>
@@ -338,6 +392,11 @@ export function Crowd() {
             <div className="gm-crowdRow" key="c3">
               {openRecord ? <CrowdHood lit /> : null}
             </div>
+            {openRecord ? (
+              <ul className="gm-crowdList gm-crowdListTight">
+                <RecordLine record={openRecord} lit showLink />
+              </ul>
+            ) : null}
             <ul className="gm-crowdList">
               {choices.map((choice) => (
                 <li className="gm-crowdLine" key={choice.id}>
@@ -351,13 +410,19 @@ export function Crowd() {
                 </li>
               ))}
             </ul>
-            {c3Line ? <p className="gm-callSub">{c3Line}</p> : null}
+            <div role="status" aria-live="polite">
+              {c3Line ? (
+                <p key={c3Line} className="gm-callSub gm-msgIn">
+                  {c3Line}
+                </p>
+              ) : null}
+            </div>
           </>
         );
       case "c3reveal":
         return (
           <>
-            <div className="gm-goalCard">
+            <div className="gm-goalCard gm-cardIn">
               <p className="gm-goalLabel">Both ends</p>
               <p className="gm-goalText">{CROWD_COPY.endOpen}</p>
               <p className="gm-goalText">{CROWD_COPY.endSealed}</p>
@@ -426,10 +491,7 @@ export function Crowd() {
     c2reveal: {
       chip: ["Challenge 2 of 3", "It cannot be known"],
       panelLabel: "The sealed rows",
-      caption:
-        shieldedRowsWithAmount(rows, C2_TARGET_ZATOSHIS).length > 1
-          ? `${CROWD_COPY.c2Reveal} ${CROWD_COPY.c2Every}`
-          : CROWD_COPY.c2Reveal,
+      caption: `${CROWD_COPY.c2Gotcha} ${CROWD_COPY.c2Card}`,
       description: "You held every record and you still could not point. That is what shielded means.",
       leak: LEAK_SEALED,
       leakLabel: "Zero. On the sealed rows, zero is the win.",

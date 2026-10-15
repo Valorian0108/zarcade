@@ -123,6 +123,26 @@ describe("challenge three: why the open row is public", () => {
   });
 });
 
+describe("the trap and the grounded answers (D-096)", () => {
+  it("keeps hope alive on the first sealed pick, then springs the gotcha", () => {
+    // The first beat must not admit the answer is unknowable, or the trap
+    // dies before the player tries the second row.
+    expect(CROWD_COPY.c2First).not.toMatch(/nobody|cannot|impossible|unknowable/i);
+    expect(CROWD_COPY.c2Gotcha).toMatch(/both/i);
+    expect(CROWD_COPY.c2Same.length).toBeGreaterThan(0);
+  });
+
+  it("refutes each wrong answer with evidence the book itself holds", () => {
+    // The block answer dies on the sealed rows' own block numbers; the tiny
+    // answer dies on challenge two's 1,000-zatoshi proof. A player who knows
+    // nothing about crypto can check both in the record they already hold.
+    const wrongIds = C3_CHOICES.filter((c) => !c.correct).map((c) => c.id);
+    expect(wrongIds).toEqual(["block", "tiny"]);
+    expect(CROWD_COPY.c3WrongBlock).toMatch(/block/i);
+    expect(CROWD_COPY.c3WrongTiny).toMatch(/1,000/);
+  });
+});
+
 describe("the shuffle (D-092)", () => {
   it("reorders without ever dropping or duplicating an item", () => {
     for (const seed of [0, 1, 7, 12345, 999999999]) {

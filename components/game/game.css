@@ -2274,6 +2274,62 @@ html[data-motion="less"] *::after {
   margin-top: 14px;
 }
 
+/* ---------- the room speaks, and the verdict lands (D-096) ----------
+   Each new feedback line arrives lit in gold like an incoming message, then
+   settles; a reveal card lands with a short rise of its own. Both are pure
+   animations, so the global less-motion rule above stills them to its soft
+   fade, and no fact ever depends on the motion to stay readable. */
+
+.gm-callSub.gm-msgIn {
+  margin-top: 12px;
+  color: var(--gold-bright);
+  animation: gmMsgIn 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes gmMsgIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+    text-shadow: 0 0 0 rgba(255, 207, 110, 0);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0);
+    text-shadow: 0 0 16px rgba(255, 207, 110, 0.55);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    text-shadow: 0 0 6px rgba(255, 207, 110, 0.16);
+  }
+}
+
+.gm-goalCard.gm-cardIn {
+  animation: gmCardIn 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes gmCardIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+    box-shadow: 0 0 0 rgba(237, 182, 74, 0);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0);
+    box-shadow: 0 0 24px rgba(237, 182, 74, 0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    box-shadow: 0 0 0 rgba(237, 182, 74, 0);
+  }
+}
+
+.gm-crowdListTight {
+  margin-top: 10px;
+}
+
 /* ---------- the rooms (D-078): one page about each game, before the machine ----------
    The room reuses the floor's head and marquee so it reads as the same
    building, then puts the game's character beside three plain blocks of

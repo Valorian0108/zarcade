@@ -253,7 +253,9 @@ export interface CrowdChoice {
 }
 
 /** Challenge three: why the open row's amount is public. One true answer.
- *  Shuffled per visit by the component (D-092); judged by id. */
+ *  Shuffled per visit by the component (D-092); judged by id. Every wrong
+ *  answer is a claim the player's own book refutes (D-096), so a player who
+ *  knows nothing about crypto can reason to the right one. */
 export const C3_CHOICES: readonly CrowdChoice[] = [
   {
     id: "open-dest",
@@ -261,13 +263,13 @@ export const C3_CHOICES: readonly CrowdChoice[] = [
     correct: true,
   },
   {
-    id: "expire",
-    text: "Shielded payments expire after a while and become public.",
+    id: "block",
+    text: "It landed in a public block, and blocks publish every amount inside them.",
     correct: false,
   },
   {
-    id: "daily",
-    text: "The network publishes every amount once a day.",
+    id: "tiny",
+    text: "The amount was tiny, so the network left it in the open.",
     correct: false,
   },
 ];
@@ -303,8 +305,9 @@ export const CROWD_COPY = {
   c1FactsAddress: "The address it paid: the arcade's own open address.",
   c1FactsSender: "The sender: not named. The coins came out of the private pool.",
   c2Brief: "One of these shielded payments moved exactly 1,000 zatoshis. Point at it.",
-  c2Fail: "Sealed. The amount is not in the record. Nobody's is.",
-  c2Admit: "It cannot be known.",
+  c2First: "Sealed. Nothing here names a number. One sealed row left to try.",
+  c2Same: "That row already answered. The other sealed row has not.",
+  c2Gotcha: "Gotcha. That was both of them.",
   c2Reveal:
     "You could see when each payment landed and how many sealed notes it carried. Counts and times are public. The amount, the sender and the receiver are not. You held every record and you still could not point. That is what shielded means.",
   c2Every:
@@ -312,6 +315,10 @@ export const CROWD_COPY = {
   c2Card: "Zero. On the sealed rows, zero is the win.",
   c3Brief: "Look at the open payment again. Its amount is public. Why?",
   c3Wrong: "Not this one. The answer lives in what an open address can hold.",
+  c3WrongBlock:
+    "Not this one. The sealed rows sit in public blocks too, and their block numbers are right there in the book. Blocks do not publish sealed amounts.",
+  c3WrongTiny:
+    "Not this one. The sealed rows moved exactly 1,000 zatoshis, the same small amount, and not one of them shows it. Size changes nothing.",
   c3Reveal:
     "This payment went to an address that cannot receive sealed money, so the network made its amount public at the exit. Privacy needs both ends. One open end and the trail shows.",
   endLine: "You held every record. You saw nothing. That is the point.",
