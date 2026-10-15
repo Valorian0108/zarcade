@@ -263,6 +263,12 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   line-height: 1.55;
 }
 
+/* A card that carries more than one line (D-096's landed explanation) keeps
+   its sentences apart, so the why and the kicker do not read as one wall. */
+.gm-goalText + .gm-goalText {
+  margin-top: 8px;
+}
+
 .gm-amountLabel {
   margin: 0;
   font-size: 12px;
