@@ -103,6 +103,16 @@ type TxStatusBody = {
   confirmations?: number;
   explorer?: string;
 };
+type HistoryBody = {
+  ok?: boolean;
+  entries?: Array<{
+    txid?: string;
+    kind?: string;
+    zatoshis?: number;
+    block?: number | null;
+    url?: string;
+  }>;
+};
 
 export type HouseStatus = {
   network: string;
@@ -340,4 +350,42 @@ export async function readPaymentProgress(txid: string): Promise<PaymentProgress
     confirmations: asNumber(body.confirmations),
     explorerUrl: body.explorer,
   };
+}
+
+/** One payment from the wallet's ledger, in facts the chain shows anyone. */
+export type LedgerRow = {
+  txid: string;
+  kind: "shielded" | "open";
+  zatoshis: number;
+  /** Null until the network has mined it. */
+  block: number | null;
+};
+
+/**
+ * The payments the house wallet really broadcast, newest first (D-093).
+ * Read-only: this is the supply for The Crowd's record book, and it never
+ * asks the wallet to move money. Malformed entries are dropped rather than
+ * trusted, and any failure simply means the book falls back to its curated
+ * rows, so the game never breaks because the wallet is busy or waking up.
+ */
+export async function readSendHistory(limit = 8): Promise<LedgerRow[]> {
+  const body = await call<HistoryBody>(
+    `/history?limit=${limit}`,
+    undefined,
+    READ_TIMEOUT_MS * 3,
+    "list the payments it made",
+  );
+  const rows: LedgerRow[] = [];
+  for (const entry of body.entries ?? []) {
+    if (typeof entry.txid !== "string" || entry.txid.length !== 64) continue;
+    if (entry.kind !== "shielded" && entry.kind !== "open") continue;
+    rows.push({
+      txid: entry.txid,
+      kind: entry.kind,
+      zatoshis:
+        typeof entry.zatoshis === "number" && Number.isFinite(entry.zatoshis) ? entry.zatoshis : 0,
+      block: typeof entry.block === "number" && Number.isFinite(entry.block) ? entry.block : null,
+    });
+  }
+  return rows;
 }

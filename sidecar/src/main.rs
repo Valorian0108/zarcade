@@ -15,12 +15,16 @@
 //!                                 and a daily budget that survives restarts.
 //!                                 Answers 409 with `code: "settling"` when the house owns
 //!                                 the money but the last payment is not mined yet.
+//! - GET  /history?limit=N      -> the payments this wallet broadcast, newest first:
+//!                                 txid, kind, amount, mined block (D-093). Read-only
+//!                                 public facts, the supply for The Crowd's record book.
 //! - POST /admin/split          -> { notes, per_note } -> one transaction that breaks the pot
 //!                                 into many small confirmed notes (D-031). Maintenance only:
 //!                                 needs the x-zarcade-admin token and is never proxied by the
 //!                                 bridge, so no player request can reach it.
 
 mod cache;
+mod history;
 mod policy;
 mod wallet;
 
@@ -63,6 +67,10 @@ struct AppState {
     /// restart cannot clear it (D-094). This is the durable treasury control;
     /// the website's in-memory rate limits are anti-abuse on top of it.
     budget: Mutex<policy::SendBudget>,
+    /// The ledger of payments this wallet broadcast, newest first (D-093).
+    /// The Crowd's record book is served from it, and it lives on disk so a
+    /// restart cannot lose the arcade's own history.
+    history: Mutex<history::SendHistory>,
 }
 
 type Shared = State<Arc<AppState>>;
@@ -303,8 +311,23 @@ async fn send(State(state): Shared, headers: HeaderMap, Json(req): Json<SendRequ
     }
     match w.send(&req.to, req.zatoshis, req.memo.as_deref()).await {
         Ok(txid) => {
-            // Count only a payment that was really built and broadcast.
+            // Count only a payment that was really built and broadcast, and
+            // write it into the ledger The Crowd is served from (D-093). The
+            // policy above guarantees `to` is one of the house's own addresses.
             state.budget.lock().await.record_send();
+            if let Some(kind) = history::kind_for(&req.to, w.address(), w.transparent_address()) {
+                let sent_at = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                state.history.lock().await.record(history::HistoryEntry {
+                    txid: txid.clone(),
+                    kind: kind.to_string(),
+                    zatoshis: req.zatoshis,
+                    sent_at,
+                    block: None,
+                });
+            }
             Json(json!({
                 "ok": true,
                 "txid": txid,
@@ -330,6 +353,50 @@ async fn send(State(state): Shared, headers: HeaderMap, Json(req): Json<SendRequ
             .into_response(),
         Err(e) => fail(StatusCode::BAD_REQUEST, e.to_string()),
     }
+}
+
+#[derive(Deserialize)]
+struct HistoryQuery {
+    limit: Option<usize>,
+}
+
+/// The payments this wallet broadcast, newest first, in facts the chain
+/// already shows anyone (D-093). Read-only, never moves money, and holds no
+/// secrets: an open payment is exactly the kind that reveals its own
+/// destination. A missing mined height is filled in from the wallet the
+/// first time it is asked and then cached in the ledger on disk, so the
+/// network is never asked twice about the same payment.
+async fn send_history(State(state): Shared, Query(q): Query<HistoryQuery>) -> Response {
+    let limit = q.limit.unwrap_or(8).clamp(1, 20);
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
+    let mut ledger = state.history.lock().await;
+    // Snapshot first: enriching writes back into the ledger, and one borrow
+    // cannot do both at once.
+    let snapshot: Vec<history::HistoryEntry> =
+        ledger.entries().iter().take(limit).cloned().collect();
+    let mut entries = Vec::with_capacity(snapshot.len());
+    for entry in snapshot {
+        let mut block = entry.block;
+        if block.is_none() {
+            if let Ok(s) = w.tx_status(&entry.txid).await {
+                if let Some(h) = s.mined_height {
+                    block = Some(u64::from(h));
+                    ledger.set_block(&entry.txid, u64::from(h));
+                }
+            }
+        }
+        entries.push(json!({
+            "txid": entry.txid,
+            "kind": entry.kind,
+            "zatoshis": entry.zatoshis,
+            "block": block,
+            "url": format!("{EXPLORER_TX_BASE}/{}", entry.txid),
+        }));
+    }
+    Json(json!({ "ok": true, "entries": entries })).into_response()
 }
 
 #[derive(Deserialize)]
@@ -522,12 +589,18 @@ async fn main() {
         budget.cap(),
         budget.sent_today()
     );
+    let ledger = history::SendHistory::load(&data_dir);
+    println!(
+        "round history ledger: {} payments recorded",
+        ledger.entries().len()
+    );
 
     let state = Arc::new(AppState {
         wallet: Mutex::new(None),
         refilling: AtomicBool::new(false),
         last_split: Mutex::new(None),
         budget: Mutex::new(budget),
+        history: Mutex::new(ledger),
     });
 
     // Background startup: open the wallet, then keep it. On failure, retry with
@@ -573,6 +646,7 @@ async fn main() {
         .route("/tx-status", get(tx_status))
         .route("/sync", post(sync_now))
         .route("/send", post(send))
+        .route("/history", get(send_history))
         .route("/admin/split", post(admin_split))
         .with_state(state);
 

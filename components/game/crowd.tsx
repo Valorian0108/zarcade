@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { GameFrame, type FrameReceipt } from "@/components/game/frame";
 import type { WatcherMood } from "@/components/watcher";
@@ -15,6 +15,7 @@ import {
   judgeWhyOpen,
   LEAK_OPEN,
   LEAK_SEALED,
+  shuffled,
   shieldedRowsWithAmount,
   type CrowdRecord,
 } from "@/lib/crowd";
@@ -32,7 +33,9 @@ import {
  * motion the global rule stills the sweep and every fact stays readable.
  *
  * No money moves in this game. The payments it reads are real and already
- * mined; the book ships as static config (lib/crowd.ts).
+ * mined; the book arrives from the page, served from the wallet's live
+ * ledger where it can and from the curated rows where history is thin
+ * (D-093), and its order is shuffled once per visit (D-092).
  */
 
 type Step =
@@ -44,6 +47,34 @@ type Step =
   | "c3"
   | "c3reveal"
   | "end";
+
+/** The shape of the live book answer (D-093). Never trusted, always checked. */
+type BookBody = { ok?: boolean; book?: CrowdRecord[] };
+
+/**
+ * One order per visit (D-092). The seed is drawn once per page load, on the
+ * client only, through `useSyncExternalStore`: the server snapshot is null,
+ * so the prerendered book keeps the canonical order and hydration stays
+ * honest, and the client snapshot is stable for the whole load, so the
+ * shuffled order never changes mid-playthrough. The seed is a UI detail,
+ * never a secret.
+ */
+let visitSeed: number | null = null;
+
+function readVisitSeed(): number {
+  if (visitSeed === null) {
+    visitSeed = Math.floor(Math.random() * 0xffffffff);
+  }
+  return visitSeed;
+}
+
+function readServerSeed(): null {
+  return null;
+}
+
+function neverSubscribe(): () => void {
+  return () => {};
+}
 
 function CrowdHood({ lit }: { lit: boolean }) {
   return <span className="gm-crowdHood" data-lit={lit} aria-hidden="true" />;
@@ -89,6 +120,13 @@ export function Crowd() {
   const [c3Line, setC3Line] = useState<string | null>(null);
   const [found, setFound] = useState<CrowdRecord | null>(null);
   const flare = useRef<number | null>(null);
+  // Where the playthrough is right now, readable from the ledger fetch when
+  // it lands: the book may only swap while it is still closed.
+  const stepRef = useRef<Step>("setup");
+
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
 
   useEffect(
     () => () => {
@@ -97,11 +135,63 @@ export function Crowd() {
     [],
   );
 
-  const openRecord = CROWD_RECORDS.find((r) => r.kind === "open") ?? null;
-  const sealedRecords = CROWD_RECORDS.filter((r) => r.kind === "shielded");
+  // D-092: one order per visit. The server render and the first paint use
+  // the canonical order, then React swaps in this visit's seed, and that
+  // order holds still for the whole playthrough. The judges decide by id,
+  // never by position, so the order is pure presentation.
+  const seed = useSyncExternalStore<number | null>(
+    neverSubscribe,
+    readVisitSeed,
+    readServerSeed,
+  );
+
+  // D-093: the live ledger swaps in once, quietly, while the book is still
+  // closed. If the wallet is busy, the answer is malformed, or the player
+  // has already opened the book, the curated rows stand and nothing about
+  // the visit changes.
+  const [liveBook, setLiveBook] = useState<readonly CrowdRecord[] | null>(null);
+  useEffect(() => {
+    let ignore = false;
+    fetch("/api/game/crowd/book")
+      .then((r) => (r.ok ? (r.json() as Promise<BookBody | null>) : null))
+      .then((data) => {
+        if (ignore) return;
+        const rows = data?.book;
+        if (
+          Array.isArray(rows) &&
+          rows.length === 3 &&
+          rows.every(
+            (r) =>
+              typeof r.txid === "string" && (r.kind === "open" || r.kind === "shielded"),
+          ) &&
+          stepRef.current === "setup"
+        ) {
+          setLiveBook(rows);
+        }
+      })
+      .catch(() => {
+        // Deliberately quiet: the curated book stands.
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+  const book = liveBook ?? CROWD_RECORDS;
+
+  const rows = useMemo(
+    () => (seed === null ? book.slice() : shuffled(book, seed)),
+    [book, seed],
+  );
+  const choices = useMemo(
+    () => (seed === null ? C3_CHOICES.slice() : shuffled(C3_CHOICES, seed + 1)),
+    [seed],
+  );
+
+  const openRecord = rows.find((r) => r.kind === "open") ?? null;
+  const sealedRecords = rows.filter((r) => r.kind === "shielded");
 
   const pickC1 = (record: CrowdRecord) => {
-    const result = judgeFindOpen(record.id);
+    const result = judgeFindOpen(rows, record.id);
     if (!result) return;
     if (result.outcome === "found") {
       setFound(result.record);
@@ -112,7 +202,7 @@ export function Crowd() {
   };
 
   const pickC2 = (record: CrowdRecord) => {
-    if (!judgePointAtAmount(record.id)) return;
+    if (!judgePointAtAmount(rows, record.id)) return;
     setC2Tries((n) => n + 1);
   };
 
@@ -133,7 +223,7 @@ export function Crowd() {
     setC3Line(CROWD_COPY.c3Wrong);
   };
 
-  const receipts: FrameReceipt[] = CROWD_RECORDS.map((record) => ({
+  const receipts: FrameReceipt[] = rows.map((record) => ({
     label: record.kind === "open" ? "Open round" : "Shielded round",
     txid: record.txid,
     block: record.block,
@@ -160,12 +250,12 @@ export function Crowd() {
         return (
           <>
             <div className="gm-crowdRow" key="c1">
-              {CROWD_RECORDS.map((record) => (
+              {rows.map((record) => (
                 <CrowdHood key={record.id} lit={false} />
               ))}
             </div>
             <ul className="gm-crowdList">
-              {CROWD_RECORDS.map((record) => (
+              {rows.map((record) => (
                 <RecordLine key={record.id} record={record} lit={false} onPick={() => pickC1(record)} />
               ))}
             </ul>
@@ -176,12 +266,12 @@ export function Crowd() {
         return (
           <>
             <div className="gm-crowdRow" key="c1found">
-              {CROWD_RECORDS.map((record) => (
+              {rows.map((record) => (
                 <CrowdHood key={record.id} lit={record.kind === "open"} />
               ))}
             </div>
             <ul className="gm-crowdList">
-              {CROWD_RECORDS.map((record) => (
+              {rows.map((record) => (
                 <RecordLine key={record.id} record={record} lit={record.kind === "open"} />
               ))}
             </ul>
@@ -249,7 +339,7 @@ export function Crowd() {
               {openRecord ? <CrowdHood lit /> : null}
             </div>
             <ul className="gm-crowdList">
-              {C3_CHOICES.map((choice) => (
+              {choices.map((choice) => (
                 <li className="gm-crowdLine" key={choice.id}>
                   <button
                     type="button"
@@ -337,7 +427,7 @@ export function Crowd() {
       chip: ["Challenge 2 of 3", "It cannot be known"],
       panelLabel: "The sealed rows",
       caption:
-        shieldedRowsWithAmount(C2_TARGET_ZATOSHIS).length > 1
+        shieldedRowsWithAmount(rows, C2_TARGET_ZATOSHIS).length > 1
           ? `${CROWD_COPY.c2Reveal} ${CROWD_COPY.c2Every}`
           : CROWD_COPY.c2Reveal,
       description: "You held every record and you still could not point. That is what shielded means.",
