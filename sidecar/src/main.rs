@@ -9,6 +9,10 @@
 //! - GET  /tx-status?txid=…     -> where one payment landed: block height and confirmations
 //! - POST /sync                 -> sync the wallet to the chain tip
 //! - POST /send                 -> { to, zatoshis, memo? } -> tiny fixed-amount transfer.
+//!                                 Three locks of its own (D-094): the x-zarcade-service
+//!                                 token when ZARCADE_SEND_TOKEN is set, the game's own
+//!                                 policy (house addresses only, exactly 1,000 zatoshis),
+//!                                 and a daily budget that survives restarts.
 //!                                 Answers 409 with `code: "settling"` when the house owns
 //!                                 the money but the last payment is not mined yet.
 //! - POST /admin/split          -> { notes, per_note } -> one transaction that breaks the pot
@@ -17,6 +21,7 @@
 //!                                 bridge, so no player request can reach it.
 
 mod cache;
+mod policy;
 mod wallet;
 
 use std::sync::{
@@ -54,6 +59,10 @@ struct AppState {
     /// Outcome of the most recent pot split, for operators who cannot read the
     /// container log (D-086). None until a split has finished or failed.
     last_split: Mutex<Option<String>>,
+    /// How many payments this wallet has broadcast today, kept on disk so a
+    /// restart cannot clear it (D-094). This is the durable treasury control;
+    /// the website's in-memory rate limits are anti-abuse on top of it.
+    budget: Mutex<policy::SendBudget>,
 }
 
 type Shared = State<Arc<AppState>>;
@@ -140,6 +149,7 @@ async fn health(State(state): Shared) -> Response {
         }
     };
     let last_split = state.last_split.lock().await.clone();
+    let budget = state.budget.lock().await;
     Json(json!({
         "ok": true,
         "service": "zarcade-sidecar",
@@ -150,6 +160,9 @@ async fn health(State(state): Shared) -> Response {
         "refilling": refilling,
         // Null until a split has finished or failed (D-086).
         "last_split": last_split,
+        // Durable spend accounting (D-094), visible without reading the log.
+        "sends_today": budget.sent_today(),
+        "daily_send_cap": budget.cap(),
     }))
     .into_response()
 }
@@ -233,7 +246,18 @@ struct SendRequest {
 /// every link it produced for our transactions would have been a dead end.
 const EXPLORER_TX_BASE: &str = "https://testnet.zecblock.com/tx";
 
-async fn send(State(state): Shared, Json(req): Json<SendRequest>) -> Response {
+async fn send(State(state): Shared, headers: HeaderMap, Json(req): Json<SendRequest>) -> Response {
+    // Lock one (D-094): the service token, checked before anything else, even
+    // before the refilling flag, so an unauthenticated caller learns nothing
+    // about the wallet's state. Armed only when ZARCADE_SEND_TOKEN is set;
+    // unset means this lock is off and the two locks below still hold.
+    let expected = std::env::var("ZARCADE_SEND_TOKEN").ok();
+    let supplied = headers
+        .get("x-zarcade-service")
+        .and_then(|v| v.to_str().ok());
+    if !policy::service_token_ok(expected.as_deref(), supplied) {
+        return fail(StatusCode::FORBIDDEN, "missing or wrong service token");
+    }
     // Checked before taking the wallet lock, which is the whole point. A split
     // holds that lock for about eight minutes, so waiting for it would leave the
     // player watching a spinner and then handing them a timeout that may not even
@@ -249,13 +273,45 @@ async fn send(State(state): Shared, Json(req): Json<SendRequest>) -> Response {
     let Some(w) = guard.as_mut() else {
         return warming();
     };
+    // Lock two (D-094): the game's own policy, enforced here instead of
+    // trusted from the caller. The money can only ever go to one of the
+    // house's two own addresses, and only in the fixed round amount, so
+    // nobody who reaches this door can aim a payment anywhere else.
+    if let Err(e) = policy::check_send(&req.to, req.zatoshis, w.address(), w.transparent_address())
+    {
+        return fail(StatusCode::FORBIDDEN, e.to_string());
+    }
+    // Lock three (D-094): the durable daily budget. The website keeps its own
+    // in-memory limits, but those die with the process; this counter lives on
+    // the wallet's disk and survives every restart.
+    {
+        let budget = state.budget.lock().await;
+        if budget.exhausted() {
+            return (
+                StatusCode::TOO_MANY_REQUESTS,
+                Json(json!({
+                    "ok": false,
+                    "code": "daily_budget",
+                    "error": format!(
+                        "The wallet has made its {} payments for today. Try again tomorrow.",
+                        budget.cap()
+                    ),
+                })),
+            )
+                .into_response();
+        }
+    }
     match w.send(&req.to, req.zatoshis, req.memo.as_deref()).await {
-        Ok(txid) => Json(json!({
-            "ok": true,
-            "txid": txid,
-            "explorer": format!("{EXPLORER_TX_BASE}/{txid}"),
-        }))
-        .into_response(),
+        Ok(txid) => {
+            // Count only a payment that was really built and broadcast.
+            state.budget.lock().await.record_send();
+            Json(json!({
+                "ok": true,
+                "txid": txid,
+                "explorer": format!("{EXPLORER_TX_BASE}/{txid}"),
+            }))
+            .into_response()
+        },
         // A distinct status and a machine-readable code, because this one is not
         // a mistake and not a failure: the money is real and on its way, the
         // wallet just may not spend it until the network has agreed. The caller
@@ -449,10 +505,29 @@ async fn main() {
         .unwrap_or_else(|e| panic!("cannot bind to {bind_addr}: {e}"));
     println!("zarcade-sidecar listening on http://{bind_addr}");
 
+    // D-094: announce the send door's locks at startup, so an operator can
+    // see in the deploy log alone whether the token is armed.
+    match std::env::var("ZARCADE_SEND_TOKEN") {
+        Ok(t) if !t.is_empty() => {
+            println!("service token armed: /send requires x-zarcade-service");
+        }
+        _ => println!(
+            "warning: ZARCADE_SEND_TOKEN is not set, so the /send token lock is OFF \
+             (the destination and amount policy and the daily budget still hold)"
+        ),
+    }
+    let budget = policy::SendBudget::load(&data_dir, policy::SendBudget::cap_from_env());
+    println!(
+        "daily send budget: {} payments per UTC day, {} already sent today",
+        budget.cap(),
+        budget.sent_today()
+    );
+
     let state = Arc::new(AppState {
         wallet: Mutex::new(None),
         refilling: AtomicBool::new(false),
         last_split: Mutex::new(None),
+        budget: Mutex::new(budget),
     });
 
     // Background startup: open the wallet, then keep it. On failure, retry with

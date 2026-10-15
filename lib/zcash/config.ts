@@ -8,8 +8,21 @@
  * Units: 1 TAZ = 100,000,000 zatoshis ("zats" for short).
  */
 
-/** The house wallet helper (D-024). It listens on this machine only. */
+/**
+ * The house wallet helper (D-024). On a dev machine it listens on this
+ * machine only; on Railway it lives on the private network with no public
+ * door (D-087, D-094).
+ */
 export const SIDECAR_URL = process.env.ZARCADE_SIDECAR_URL ?? "http://127.0.0.1:9070";
+
+/**
+ * The service token for the wallet's send door (D-094). When the same value
+ * is set on both services, the sidecar accepts a payment request only from a
+ * caller that knows it. Empty means the token lock is off, which deploys
+ * safely but is announced in the sidecar's log: the destination and amount
+ * policy and the daily budget hold either way.
+ */
+export const SIDECAR_SERVICE_TOKEN = process.env.ZARCADE_SEND_TOKEN ?? "";
 
 /**
  * How much one round of Unseen moves: 1,000 zatoshis, which is 0.00001 TAZ.

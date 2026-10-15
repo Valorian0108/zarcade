@@ -12,7 +12,13 @@
  * success: if the payment did not happen, this throws.
  */
 
-import { READ_TIMEOUT_MS, REFILLING_MESSAGE, SEND_TIMEOUT_MS, SIDECAR_URL } from "./config";
+import {
+  READ_TIMEOUT_MS,
+  REFILLING_MESSAGE,
+  SEND_TIMEOUT_MS,
+  SIDECAR_SERVICE_TOKEN,
+  SIDECAR_URL,
+} from "./config";
 import { formatTaz } from "./format";
 
 /** Something went wrong between the app and the helper. `message` is safe to show a player. */
@@ -143,7 +149,13 @@ async function call<T>(
   try {
     response = await fetch(`${SIDECAR_URL}${path}`, {
       ...init,
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        // D-094: the send door's second lock. The sidecar checks this header
+        // on /send when ZARCADE_SEND_TOKEN is armed. Carrying it on every
+        // call keeps the bridge one shape and costs nothing elsewhere.
+        ...(SIDECAR_SERVICE_TOKEN ? { "x-zarcade-service": SIDECAR_SERVICE_TOKEN } : {}),
+      },
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {

@@ -102,6 +102,50 @@ the pot without it.
 5. **Deploy** the sidecar: go back to the service overview and click
    **Deploy** (or just wait — Railway auto-deploys when env vars change).
 
+### Set the send token (added 2026-10-15, D-094)
+
+The send token is the second lock on the wallet's pay door.  The door
+already refuses anything that is not a game payment (only the arcade's own
+two addresses, only the fixed 1,000 zatoshis, and a daily budget that
+survives restarts), but with the token armed, only the website can even
+knock.  One value goes to BOTH services, and the order matters.
+
+1. Generate one random value in PowerShell (do not reuse the admin token):
+
+```
+-join ((1..64) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+```
+
+2. **web service FIRST**: Settings → Environment Variables → add
+   - **Name**: `ZARCADE_SEND_TOKEN`
+   - **Value**: the random value from step 1.
+
+   Wait for web to redeploy.  The website now carries the token on every
+   call to the wallet, and the old sidecar simply ignores it, so nothing
+   breaks at this stage.
+
+3. **sidecar service SECOND**: Settings → Environment Variables → add the
+   same variable with the same value.  Railway redeploys it, and from that
+   moment the wallet only accepts payment requests that carry the token.
+   (If you did this first instead, rounds would fail with 403 until the web
+   service caught up.  Web first, sidecar second, no downtime.)
+
+4. Check the sidecar's **Deploy Logs**.  You want to see this line:
+
+```
+service token armed: /send requires x-zarcade-service
+```
+
+   If you instead see the warning that the token lock is OFF, the variable
+   did not take; check the spelling and redeploy.
+
+5. Play one real round on the live site to confirm the two services still
+   shake hands.
+
+It is safe to postpone this section: with the variable unset, the sidecar
+logs a warning and the door still enforces the destination, the amount and
+the daily budget.  The token is the extra lock, not the only one.
+
 ### Verify the sidecar works
 
 The sidecar will now be running on the private network.  Let's give it a

@@ -46,7 +46,7 @@ ones, both mined on 2026-10-11:
 | | Hidden | Open |
 | --- | --- | --- |
 | Explorer shows the amount | No | Yes |
-| Explorer shows the sender | No | Yes |
+| Explorer shows the sender | No | No. The coins come out of the private pool, so the payment never names who sent it |
 | Explorer shows the recipient | No | Yes |
 | A private note can ride along | Yes | No. The network refuses memos on transparent payments |
 | The explorer's own verdict | "Fully private… all amounts, senders, and recipients are encrypted" | Privacy score 0/100 |
@@ -63,9 +63,12 @@ flowchart LR
 ```
 
 The front end is Next.js 16 with React 19 and TypeScript. The wallet is a
-Rust sidecar built on axum and librustzcash. Its seed never leaves
-`sidecar/data/`, and it listens on `127.0.0.1:9070`, an address only the
-machine itself can reach.
+Rust sidecar built on axum and librustzcash. Its seed never leaves the
+sidecar's data directory. On a dev machine it listens on `127.0.0.1:9070`,
+which only that machine can reach. On Railway it has no public door at all,
+and its send endpoint carries three locks of its own (D-094): a service
+token, the game's exact payment policy (the house's own two addresses, the
+fixed round amount, nothing else), and a daily budget that survives restarts.
 
 Exactly one route can move money: `POST /api/game/unseen/send`. It accepts
 `{"choice": "hide"}` or `{"choice": "open"}` and nothing else. Unexpected
@@ -190,8 +193,9 @@ chain data. The full system is written down in [STYLEGUIDE.md](STYLEGUIDE.md).
 ## Limits
 
 - Testnet only. No real money, ever.
-- One machine is live. Four cabinets are dark and the floor says so: The
-  Proof Puzzle, The Double-Spend Heist, The Auditor's Key, The Vault Run.
+- Two machines are live: Unseen and The Crowd. Four cabinets are dark and
+  the floor says so: The Proof Puzzle, The Double-Spend Heist, The
+  Auditor's Key, The Vault Run.
 - One confirmation cannot be skipped, so round pacing depends on the chain.
 - The first sync is slow and the pot split is slower. Both are stated costs,
   not surprises.
