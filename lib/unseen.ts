@@ -87,14 +87,14 @@ export const ROUNDS: readonly Round[] = [
     label: "Round 3 of 3",
     title: "An address with no choice",
     brief: "This payment goes to an address that can only be reached in the open.",
-    goal: "Send it. Hiding is not on offer, and that is a fact about the network rather than a rule this game made up.",
+    goal: "Just send it. Hiding is not even an option here, and that is not a rule this game made up. It is how the network works.",
     allows: ["open"],
     lockedWhy:
       "The address on the other end is an open address. It has nowhere to put a hidden payment, so the network cannot build one. That is true of the real address the arcade pays, not only inside this game.",
     correct: "open",
     teachHidden: null,
     teachOpen:
-      "You paid an address that can only be reached in the open, so where it went and how much are public whether or not you wanted them to be. Privacy needs both ends to agree. If the other side cannot receive a hidden payment, you cannot hide it.",
+      "You paid an address that can only be reached in the open, so where it went and how much are public whether or not you wanted them to be. Hiding only works when both ends of a payment can hide. If the address on the other end cannot take a hidden payment, then the payment cannot be hidden.",
   },
 ];
 

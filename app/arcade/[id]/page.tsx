@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MotionPrefProvider, MotionToggle } from "@/components/motion-pref";
 import { Watcher } from "@/components/watcher";
 import { CrowdFigure } from "@/components/crowd-figure";
-import { GAMES, type GameEntry } from "@/lib/games";
+import { GAMES, glossParts, type GameEntry } from "@/lib/games";
 
 /**
  * The room before the machine (D-078). One page per game, driven by the same
@@ -83,7 +83,17 @@ export default async function GameRoomPage({ params }: Params) {
             <div className="gm-roomCopy">
               <p className="gm-roomAbout">{game.about}</p>
               <p className="gm-eyebrow gm-roomLabel">What it teaches</p>
-              <p className="gm-roomText">{game.teaches}</p>
+              <p className="gm-roomText">
+                {glossParts(game.teaches).map((part, i) =>
+                  part.gloss ? (
+                    <span key={i} className="gm-gloss">
+                      {part.text}
+                    </span>
+                  ) : (
+                    <span key={i}>{part.text}</span>
+                  ),
+                )}
+              </p>
               <p className="gm-eyebrow gm-roomLabel">What you will see</p>
               <p className="gm-roomText">{game.sees}</p>
               <div className="gm-actions gm-roomActions">

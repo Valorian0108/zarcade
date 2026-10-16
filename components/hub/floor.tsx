@@ -55,8 +55,8 @@ export function Floor() {
 
         <p className="gm-floorNote">
           {liveCount === 1
-            ? "One machine is live. The others come later."
-            : `${liveCount} machines are live. The others come later.`}
+            ? "One machine you can play right now. The rest are still being built."
+            : `${liveCount} machines you can play right now. The rest are still being built.`}
         </p>
       </main>
     </div>

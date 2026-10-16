@@ -189,8 +189,8 @@ export function Door() {
           the same effect that measures the peek. */}
       <span className="gm-wFloor" aria-hidden="true" />
       <p className="gm-banner">
-        Everything here runs on the Zcash test network with practice money.
-        Nothing costs anything.
+        Everything here runs on the Zcash test network with practice money, so
+        nothing you do here costs you anything.
       </p>
 
       <div className="gm-doorTop">

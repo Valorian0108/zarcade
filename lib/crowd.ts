@@ -49,7 +49,7 @@ const EXPLORER = "https://testnet.zecblock.com/tx/";
  *  the facts. True of any shielded transaction, curated or fresh. */
 const SEALED_READABLE: readonly string[] = [
   "when it landed",
-  "how many sealed notes it carried",
+  "how many sealed coins it carried",
 ];
 
 /** What a stranger can read off an open payment: two of four facts, on
@@ -290,40 +290,43 @@ export const LEAK_SEALED = 0;
 
 /** Every word the machine says, in one place so the voice never drifts. */
 export const CROWD_COPY = {
-  teach: "Every payment is on the record. See how much a stranger can read.",
+  teach: "Every payment the arcade ever made is on the public record. Come and read what a stranger can make of it.",
   setup:
-    "You are the stranger. This is the arcade's complete record book. Nothing here is kept from you. Your job is to read what you can.",
+    "You are the stranger here. This book holds every payment the arcade ever made, and nothing in it is kept from you. Your job is simply to read what you can.",
   setupCard:
-    "Three challenges. Each one is a question about this book. Two have answers you can find. One has an answer you cannot, and that is the point of it.",
-  c1Brief: "One payment in this book was made in the open. Find it.",
+    "There are three challenges, and each one is a question about this book. Two of them have answers you can find. The third has an answer nobody can find, and understanding why is the whole point of it.",
+  c1Brief: "One payment in this book was made in the open. Can you find it?",
   c1Sealed:
-    "Sealed end to end. The amount, the sender and the receiver are all hidden. Try another row.",
+    "This one is sealed end to end. The amount, the sender and the receiver are all hidden, so it is not the row you want. Try another one.",
   c1Found:
-    "You found it. The amount and the address sit right there, readable by anyone. An open payment is a trail, and anyone who holds the record book can follow it. One thing it still does not say: who sent it. The coins that paid it came out of the private pool.",
+    "You found it. The amount and the address sit right there for anyone to read, and the explorer link under the row opens the real record on the Zcash blockchain. You will see the same two facts there. What the record never says is who sent it, because the coins that paid it came out of the private pool unnamed. That is the shape of the whole chain: every payment is out in the open, and not one of them carries a person's name.",
   c1FactsLabel: "What the public reads",
   c1FactsAmount: "The amount, in the clear.",
   c1FactsAddress: "The address it paid: the arcade's own open address.",
   c1FactsSender: "The sender: not named. The coins came out of the private pool.",
-  c2Brief: "One of these shielded payments moved exactly 1,000 zatoshis. Point at it.",
-  c2First: "Sealed. Nothing here names a number. One sealed row left to try.",
-  c2Same: "That row already answered. The other sealed row has not.",
-  c2Gotcha: "Gotcha. That was both of them.",
+  c2Brief: "One of these shielded payments moved exactly 1,000 zatoshis. Can you point at it?",
+  c2First: "Sealed. There is no amount written anywhere in this row. One sealed row left to try.",
+  c2Same: "That row already told you what it knows. The other sealed row has not had its turn yet.",
+  c2Gotcha:
+    "Gotcha. That was both of them. Both rows were shielded, so there was never a way to point at the right one.",
   c2Reveal:
-    "You could see when each payment landed and how many sealed notes it carried. Counts and times are public. The amount, the sender and the receiver are not. You held every record and you still could not point. That is what shielded means.",
+    "Here is what you could see the whole time: when each payment landed, and how many sealed coins it carried. Those two things are public on purpose.",
   c2Every:
-    "Every shielded row in this book moved exactly that much, and not one of them shows it.",
-  c2Card: "Zero. On the sealed rows, zero is the win.",
-  c3Brief: "Look at the open payment again. Its amount is public. Why?",
-  c3Wrong: "Not this one. The answer lives in what an open address can hold.",
+    "What stays hidden is the amount, the sender and the receiver. Every shielded row in this book moved exactly 1,000 zatoshis, and not one of them shows it.",
+  c2Card:
+    "So this challenge has no answer, and that is the lesson. You held every record and you still could not point at one, because a shielded payment does not carry its amount in the open.",
+  c3Brief: "Look at the open payment again. Its amount is out in the open for anyone to read. Why do you think that is?",
+  c3Wrong: "Not this one. The reason is about what an open address can and cannot hold.",
   c3WrongBlock:
-    "Not this one. The sealed rows sit in public blocks too, and their block numbers are right there in the book. Blocks do not publish sealed amounts.",
+    "Not this one. The sealed rows sit in public blocks too, and you can see their block numbers right there in the book. A block says when a payment landed. It never says how much a sealed payment moved.",
   c3WrongTiny:
-    "Not this one. The sealed rows moved exactly 1,000 zatoshis, the same small amount, and not one of them shows it. Size changes nothing.",
+    "Not this one. The sealed rows moved exactly 1,000 zatoshis, the same small amount as this one, and not one of them shows it. The size of a payment changes nothing about what gets hidden.",
   c3Reveal:
-    "This payment went to an address that cannot receive sealed money, so the network made its amount public at the exit. Privacy needs both ends. One open end and the trail shows.",
-  endLine: "You held every record. You saw nothing. That is the point.",
+    "This payment went to an open address, and an open address has nowhere to put sealed money. So the network had to write the amount in the open for the payment to land at all. Hiding only works when both ends of a payment can hide. If one end is open, that end shows.",
+  endLine:
+    "You held every record in the book, and the sealed ones still told you nothing. That is not a flaw in them. That is what they are for.",
   endProse:
-    "The open row gave up two facts of four. The sealed rows gave up nothing at all. That gap is not a trick of this game. It is how the network behaves.",
-  endOpen: "Open rows read: two facts of four.",
-  endSealed: "Sealed rows read: nothing at all.",
+    "The open row let you read two of the four facts. The sealed rows let you read none of them. That difference is not something this game invented. It is just how the network behaves.",
+  endOpen: "The open row: two of the four facts readable.",
+  endSealed: "The sealed rows: nothing readable at all.",
 } as const;

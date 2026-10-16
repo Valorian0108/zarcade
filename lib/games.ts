@@ -37,16 +37,16 @@ export const GAMES: GameEntry[] = [
   {
     id: "unseen",
     name: "Unseen",
-    teach: "Send money without the whole network watching.",
+    teach: "Send money and choose how much of it the network gets to see.",
     status: "playable",
     // The real home of the game now that the shared frame (A5) exists.
     href: "/games/unseen",
     about:
-      "You stand at a window with one choice to make: hide a payment, or leave it open. The house wallet pays real testnet money either way, and the screen then shows what the network actually saw. Nothing here is simulated.",
+      "One choice, three times over: hide a payment, or leave it open. The arcade's wallet pays real testnet money either way, and the screen then shows you what the network actually saw. Nothing here is pretend.",
     teaches:
-      "A shielded payment leaves no amount, no sender and no receiver in the public record. An open payment leaves a trail anyone can follow.",
+      "When you hide a payment, the public record keeps no amount, no sender and no receiver. When you leave it open, anyone can follow where it went and how much moved.",
     sees:
-      "You will see two choices, a waiting clock, and a panel that reads what the public can see.",
+      "Two buttons, a clock while the payment lands, and a panel that lists what the public can see.",
   },
   {
     // Cabinet two, lit after the owner's playtest verdict ("this is dope,
@@ -59,11 +59,11 @@ export const GAMES: GameEntry[] = [
     glyph: "crowd",
     cast: "crowd",
     about:
-      "You play the stranger. The arcade hands you its complete record book, every payment it ever made, and asks you to read what you can. Some rows give up their facts. Some give up nothing at all.",
+      "You play the stranger. The arcade hands you its whole record book, every payment it ever made, and asks you to read what you can from it. Some rows tell you plenty. Some tell you nothing at all.",
     teaches:
-      "Open payments are trails. Shielded payments are sealed: when they landed and how many notes they carried are public, amounts and people are not.",
+      "Open payments leave a trail of everything they did: the time they landed, the amount, and the address they paid. Shielded payments stay sealed. The blockchain still shows when one landed and how many sealed notes ({{coins}}) it carried, but the amount and the people on both ends stay hidden by default.",
     sees:
-      "You will see a row of hooded figures, a list of records with explorer links, and a meter that reads what you pinned down.",
+      "A row of hooded figures, a list of real records with links to the explorer, and a meter that counts what you managed to read.",
   },
   {
     id: "proof",
@@ -101,4 +101,25 @@ export function splitGames(): { hero: GameEntry | null; rest: GameEntry[] } {
   const hero = playable[0] ?? null;
   const rest = GAMES.filter((g) => g !== hero);
   return { hero, rest };
+}
+
+/**
+ * The one-word gloss convention (D-097). A teaches line may wrap a single word
+ * in double braces, and the room renders that word in the house gold as its
+ * own explanation: "sealed notes ({{coins}})" reads as "sealed notes (coins)"
+ * with the gloss lit, so a player who has never heard the word still gets it
+ * in one word. Everything outside the braces renders exactly as written.
+ */
+export function glossParts(text: string): Array<{ text: string; gloss: boolean }> {
+  const parts: Array<{ text: string; gloss: boolean }> = [];
+  const pattern = /\{\{(.+?)\}\}/g;
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index ?? 0;
+    if (index > last) parts.push({ text: text.slice(last, index), gloss: false });
+    parts.push({ text: match[1], gloss: true });
+    last = index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), gloss: false });
+  return parts;
 }

@@ -2336,6 +2336,14 @@ html[data-motion="less"] *::after {
   margin-top: 10px;
 }
 
+/* The one-word gloss (D-097): the first time a room names a piece of jargon,
+   the plain word that explains it arrives lit in the house gold, so nobody
+   has to leave the page to understand a sentence. */
+.gm-gloss {
+  color: var(--gold-bright);
+  font-weight: 600;
+}
+
 /* ---------- the rooms (D-078): one page about each game, before the machine ----------
    The room reuses the floor's head and marquee so it reads as the same
    building, then puts the game's character beside three plain blocks of

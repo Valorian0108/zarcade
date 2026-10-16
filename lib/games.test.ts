@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { GAMES } from "./games";
+import { GAMES, glossParts } from "./games";
 
 /**
  * The hub list and its rooms (D-019, D-078). The floor and the rooms both
@@ -33,6 +33,15 @@ describe("the hub list", () => {
         expect(line).not.toMatch(/cannot be known/i);
       }
     }
+  });
+
+  it("glosses jargon in one lit word the first time it appears (D-097)", () => {
+    const crowd = GAMES.find((g) => g.id === "crowd");
+    const glosses = glossParts(crowd?.teaches ?? "").filter((p) => p.gloss);
+    expect(glosses.map((p) => p.text)).toEqual(["coins"]);
+    expect(glossParts("a plain line with no gloss")).toEqual([
+      { text: "a plain line with no gloss", gloss: false },
+    ]);
   });
 
   it("lights cabinet two for The Crowd after the owner's verdict", () => {

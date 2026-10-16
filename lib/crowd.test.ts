@@ -243,6 +243,27 @@ describe("the live book composer (D-093)", () => {
   });
 });
 
+describe("the voice a person uses (D-097)", () => {
+  it("asks instead of ordering where the owner asked for an invitation", () => {
+    expect(CROWD_COPY.c1Brief.trim().endsWith("?")).toBe(true);
+    expect(CROWD_COPY.c2Brief.trim().endsWith("?")).toBe(true);
+    expect(CROWD_COPY.c3Brief.trim().endsWith("?")).toBe(true);
+  });
+
+  it("never lets a gotcha or a reveal land without saying why", () => {
+    expect(CROWD_COPY.c2Gotcha).toMatch(/shielded/);
+    expect(CROWD_COPY.c2Card).toMatch(/because/);
+    expect(CROWD_COPY.c3Reveal).toMatch(/the network had to/);
+  });
+
+  it("keeps the poster lines out: no compressed parallel verdicts", () => {
+    for (const value of Object.values(CROWD_COPY)) {
+      expect(value).not.toMatch(/zero is the win/i);
+      expect(value).not.toMatch(/that is the point\.?$/i);
+    }
+  });
+});
+
 describe("the meter and the voice", () => {
   it("reads an open row as two of four facts and a sealed row as none", () => {
     expect(LEAK_OPEN).toBe(0.5);
