@@ -162,7 +162,10 @@ cd /opt/zarcade/sidecar && git pull && cargo build --release && systemctl restar
 - **No padlock yet:** the name has not propagated. Check at dnschecker.org
   for zarcade.obestlink.com; Caddy logs: `journalctl -u caddy -n 30`.
 - **Game says the wallet is not running:** first sync may still be going.
-  `curl -s 127.0.0.1:9070/health`, retry in a few minutes.
+  `curl -s 127.0.0.1:9070/health`, retry in a few minutes.  On a service
+  whose deployment reads **Completed** and whose log never shows
+  `zarcade-sidecar listening`, the image shipped the build's empty stand-in
+  instead of the wallet (D-098); the Dockerfile now fails that build outright.
 
 ## Appendix: if the repo stays private
 

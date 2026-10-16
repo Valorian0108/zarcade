@@ -119,7 +119,7 @@ first half.
 
 | What you see | What it usually means |
 | --- | --- |
-| `/api/house/status` answers 503 | The sidecar is not running. Start it first. |
+| `/api/house/status` answers 503 | The sidecar is not running. Start it first.  If its Railway deployment reads **Completed** with a log that never shows `zarcade-sidecar listening`, the image shipped the build's empty stand-in rather than the wallet: see D-098. |
 | A round answers `409` with `code: "settling"` | Normal, not a fault. The wallet has no confirmed coin to spend right now. If this keeps happening, the pot has not been split, or the split's small coins have run out. Run the split again. See `RESEARCH.md` items I1 and I7. |
 | A round answers 503 | The sidecar stopped, or it cannot reach `testnet.zec.rocks`. |
 | The balance reads 0 when it should not | The wallet was rebuilt without the pinned birthday height. The birthday must be at or below 4,488,820 or the original deposit is invisible forever. See `RESEARCH.md` item H3. |

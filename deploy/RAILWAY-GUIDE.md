@@ -280,8 +280,21 @@ subdomain:
 ## Daily life
 
 - **Pushing code**: every push to `main` on GitHub triggers a Railway
-  deploy.  The website rebuilds in ~1 minute.  The sidecar rebuilds
-  only if `sidecar/src/` or `sidecar/Cargo.toml` changed (layer caching).
+  deploy.  The website rebuilds in about a minute.
+- **Keeping the wallet out of website deploys (D-099)**: by default a push
+  redeploys *every* service, so a copy-only commit restarts the wallet for
+  nothing.  Fix it once: sidecar service → **Settings** → **Build** →
+  **Watch Paths** → add the single line `sidecar/**`.  From then on the
+  sidecar only redeploys when its own code or recipe changes, and the
+  website keeps deploying on everything.
+- **A deployment is not proof the wallet is in the image (D-098)**: the
+  sidecar's build warms cargo's cache with a stand-in `main`, and Railway's
+  docs warn that a build-cache hit "is not guaranteed".  On a cold cache the
+  real build used to be skipped and the stand-in shipped: it starts, prints
+  nothing and exits 0, so Railway reports a *successful* deployment while
+  the wallet is absent.  The Dockerfile now touches the sources before the
+  real build and fails the build if the binary does not contain the
+  sidecar's startup line, so a stand-in cannot ship silently again.
 - **Wallet data**: the volume at `/data` survives all redeploys.  Your
   seed, transaction history, and addresses are safe.
 - **Pot getting low**: claim more testnet ZEC from the faucet, then
@@ -304,3 +317,4 @@ subdomain:
 | Sidecar build fails with OOM | Railway's default builder memory is small for the zcash crypto stack.  Go to the sidecar service → **Settings** → **Builder** → increase memory to 4 GB, click Save, then **Deploy** it again. |
 | Wallet sync never finishes | The sidecar connects to `testnet.zec.rocks:443` (the canonical lightwalletd endpoint).  If Railway egress is blocked, try setting `ZARCADE_LIGHTWALLETD_URL` to a different endpoint. |
 | Website build fails with "Module not found" | Run `npm install` locally and push the updated `package-lock.json`.  Railway runs `npm ci` which requires the lockfile to be up to date. |
+| A sidecar deployment reads **Completed** seconds after it starts, and its log holds only "Mounting volume" and "Starting Container" | The image shipped the build's empty stand-in instead of the wallet (D-098).  Railway calls an app that exits with code zero **Completed**, so a healthy-looking deploy can mean no wallet at all.  Redeploy the sidecar and confirm the log shows `zarcade-sidecar listening` and `service token armed`; the Dockerfile now fails the build rather than ship a stand-in. |
