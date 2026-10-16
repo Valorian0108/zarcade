@@ -13,10 +13,23 @@ COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo 'fn main() {}' > src/main.rs &&  \
     cargo build --release --bin zarcade-sidecar 2>/dev/null; true
 
-# Now the real source — cargo sees timestamps change and recompiles
-# only the sidecar crate, not the heavy zcash stack.
+# Now the real source.  Cargo decides what to recompile by comparing
+# timestamps, and the stand-in main.rs above was written moments ago by this
+# same build, so a plain copy can leave cargo convinced the crate is already
+# built.  When that happened the image shipped the stand-in: it starts, prints
+# nothing and exits 0, which the platform reports as a successful deploy while
+# the wallet is simply absent (D-098, 2026-10-16).  Touching the sources forces
+# the real crate to build.  Dependencies stay cached, so this is still quick.
 COPY src ./src
-RUN cargo build --release --bin zarcade-sidecar
+RUN find src -type f -exec touch {} + \
+    && cargo build --release --bin zarcade-sidecar
+
+# Refuse to ship a stand-in.  The real binary carries our startup line and
+# weighs tens of megabytes (bundled proving parameters); the stand-in is a few
+# hundred kilobytes and says nothing.  Failing the build here is loud, which is
+# the point: a silent stand-in must never reach a deployment again.
+RUN grep -aq "zarcade-sidecar listening" target/release/zarcade-sidecar \
+    || { echo "refusing to ship a stand-in binary: the real sidecar did not build"; exit 1; }
 
 # Stage two: a tiny runtime.  The proving parameters are bundled into
 # the binary (bundled-prover), so no downloads or parameter files are
