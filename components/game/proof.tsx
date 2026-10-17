@@ -53,6 +53,15 @@ function pickQuestions(code: number[]): Question[] {
   return pool.map((q) => ({ text: q.text, answer: q.test(code) }));
 }
 
+/**
+ * Every three-digit code, printed as one wall of small type on the end
+ * screen (D-102). The wall IS the proof that the Watcher holds nothing:
+ * all he ever heard was one word, so from his seat every line of this
+ * wall is still possible. The player can find their own code in it
+ * because they typed it. He cannot.
+ */
+const CODE_WALL = Array.from({ length: 1000 }, (_, i) => String(i).padStart(3, "0")).join(" ");
+
 export function Proof() {
   const [step, setStep] = useState<Step>("setup");
   const [code, setCode] = useState("");
@@ -205,6 +214,30 @@ export function Proof() {
           </button>
         </div>
         <div className="gm-goalCard gm-crowdFacts">
+          <p className="gm-goalLabel">What the Watcher heard</p>
+          <p className="gm-goalText">He asked three questions.</p>
+          {(questions ?? []).map((q) => (
+            <p className="gm-goalText" key={q.text}>
+              {q.text}
+            </p>
+          ))}
+          <p className="gm-goalText">
+            The safe said one word back: {allCorrect ? "open" : "shut"}.
+          </p>
+          <p className="gm-goalText">
+            From where he sits, your code is still any of the thousand below. Yours is
+            in there. You can find it because you typed it. He cannot, because one word
+            is all he ever got.
+          </p>
+          <p
+            className="gm-callSub"
+            style={{ fontSize: 10, lineHeight: 1.7, opacity: 0.6, marginTop: 8 }}
+            aria-hidden="true"
+          >
+            {CODE_WALL}
+          </p>
+        </div>
+        <div className="gm-goalCard gm-crowdFacts">
           <p className="gm-goalLabel">Public record</p>
           <p className="gm-goalText">Transaction ID: 0x8f93…4a2c</p>
           <p className="gm-goalText">Sender: [ENCRYPTED / HIDDEN]</p>
@@ -263,8 +296,8 @@ export function Proof() {
       panelLabel: "The safe",
       caption: (
         <p>
-          The safe opens only if every answer matched your secret code. The record below
-          is what the public gets to see.
+          The safe opens only if every answer matched your secret code. Below sits what
+          the Watcher heard, and then what the public gets to see.
         </p>
       ),
       description: allCorrect
