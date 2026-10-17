@@ -170,12 +170,12 @@ the Syne font swap (D-017).
 | Card, if you don't | confirmed · transparent chain | on the public list, in plain text |
 | Watcher, idle | It watches every transparent transaction. Not evil — just… everyone. | It watches every payment that is not hidden. It is not mean. It is just everyone, looking. |
 | Watcher, you hid it | It sees a valid proof and nothing more. Your business is yours. | It only sees that the payment is real. Nothing else. Your business stays yours. |
-| Watcher, you did not | It just read your payment. Sender, amount, memo. All of it. | It just read your payment. Who paid, how much, and the note. All of it. |
+| Watcher, you did not | It just read your payment. Sender, amount, memo. All of it. | It just read your payment. Who paid, how much, and the message. All of it. |
 | Meter, before | Nothing yet — you haven't sent anything. | Nothing yet. You have not sent anything. |
 | Meter, you hid it | Nothing. A valid proof, and that is all. | Nothing. The network checked the math and learned no secrets. |
-| Meter, you did not | Everything: who paid, who received, how much, and the memo. Forever. | Everything. Who paid, who got paid, how much, and the note. Forever. |
+| Meter, you did not | Everything: who paid, who received, how much, and the memo. Forever. | Everything. Who paid, who got paid, how much, and the message. Forever. |
 | Lesson, you hid it | You moved 5 ZEC into the shielded pool. The network verified a zero-knowledge proof that the coins are real — without revealing who sent them, who received them, or the amount. The Watcher learned only that a valid transaction happened. | You put 5 ZEC into the hidden pool. The network ran a math check (that is what "proof" means here) that the coins are real. The check never shows who paid, who got paid, or how much. The Watcher learned only that a real payment happened. |
-| Lesson, you did not | The transaction was written to the transparent chain in plain text. Anyone — the Watcher — can now read the sender, the recipient, the amount, and the memo. Nothing broke; this is simply what "transparent" means. | The payment was written on the public list in plain text. Anyone can read it now, the Watcher included. Who paid, who got paid, how much, and the note. Nothing went wrong. This is just what "public" means. |
+| Lesson, you did not | The transaction was written to the transparent chain in plain text. Anyone — the Watcher — can now read the sender, the recipient, the amount, and the memo. Nothing broke; this is simply what "transparent" means. | The payment was written on the public list in plain text. Anyone can read it now, the Watcher included. Who paid, who got paid, how much, and the message. Nothing went wrong. This is just what "public" means. |
 | Buttons | hide it · don't hide it · try the other choice | hide it · don't hide it · try the other way |
 
 ### Why this is not dumbing it down

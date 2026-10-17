@@ -99,7 +99,7 @@ export const ROUNDS: readonly Round[] = [
 ];
 
 /** The four things a stranger could possibly learn about one payment. */
-export const LEAK_PARTS = ["who paid", "who got paid", "how much", "the note"] as const;
+export const LEAK_PARTS = ["who paid", "who got paid", "how much", "the message"] as const;
 
 /** What the server reads back from the chain about one payment. */
 export type PublicFacts = {

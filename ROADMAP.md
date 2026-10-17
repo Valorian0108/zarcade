@@ -598,7 +598,7 @@
     call. PENDING: owner verdict on the rooms themselves.
     Owner verdict on first full play: "this is dope, keep her"
     (2026-10-13).
-  - Cabinet three: The Proof Puzzle. One small read-only hash endpoint,
+  - Cabinet three: The Proof Puzzle. D-089: Schnorr-style three-move proof cabinet, Proposed — one small read-only hash endpoint,
     no wallet changes.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
     cheap on the existing rails.

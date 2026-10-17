@@ -176,14 +176,14 @@ function ChainContents({ phase }: { phase: Phase }) {
 const WATCHER_LINES: Record<Phase, string> = {
   intro:
     "It watches every payment that is not hidden. It is not mean. It is just everyone, looking.",
-  leaked: "It just read your payment. Who paid, how much, and the note. All of it.",
+  leaked: "It just read your payment. Who paid, how much, and the message. All of it.",
   sealed:
     "It only sees that the payment is real. Nothing else. Your business stays yours.",
 };
 
 const LEAK_CAPTIONS: Record<Phase, string> = {
   intro: "Nothing yet. You have not sent anything.",
-  leaked: "Everything. Who paid, who got paid, how much, and the note. Forever.",
+  leaked: "Everything. Who paid, who got paid, how much, and the message. Forever.",
   sealed: "Nothing. The network checked the math and learned no secrets.",
 };
 
@@ -191,7 +191,7 @@ const LESSONS: Record<"sealed" | "leaked", string> = {
   sealed:
     "You put 5 ZEC into the hidden pool. The network ran a math check (that is what “proof” means here) that the coins are real. The check never shows who paid, who got paid, or how much. The Watcher learned only that a real payment happened.",
   leaked:
-    "The payment was written on the public list in plain text. Anyone can read it now, the Watcher included. Who paid, who got paid, how much, and the note. Nothing went wrong. This is just what “public” means.",
+    "The payment was written on the public list in plain text. Anyone can read it now, the Watcher included. Who paid, who got paid, how much, and the message. Nothing went wrong. This is just what “public” means.",
 };
 
 export function WorldPreview() {

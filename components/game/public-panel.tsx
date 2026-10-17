@@ -125,27 +125,27 @@ export function PublicPanel({
           sealText: "Sealed",
           sub: "How much moved is not on the public list.",
         },
-    exposed.has("the note")
+    exposed.has("the message")
       ? {
-          label: "the note",
+          label: "the message",
           kind: "lit",
           tag: "On the public list",
           value: "Readable by anyone",
-          sub: "Anyone can read the note that rode along.",
+          sub: "Anyone can read the message that rode along.",
         }
       : facts.notePossible
         ? {
-            label: "the note",
+            label: "the message",
             kind: "sealed",
             tag: "Sealed",
             sealText: "Sealed",
-            sub: "A note rode along, but it is sealed shut.",
+            sub: "A message rode along, but it is sealed shut.",
           }
         : {
-            label: "the note",
+            label: "the message",
             kind: "none",
             tag: "Nothing exists",
-            sub: "Open payments cannot carry a note, so there is nothing here to see.",
+            sub: "Open payments cannot carry a message, so there is nothing here to see.",
           },
   ];
 

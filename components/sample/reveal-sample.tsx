@@ -76,10 +76,10 @@ const ROWS: readonly Row[] = [
     sub: "1,000 zatoshis. A tiny amount, but the number itself is public.",
   },
   {
-    label: "the note",
+    label: "the message",
     kind: "none",
     tag: "Nothing exists",
-    sub: "Open payments cannot carry a note, so there is nothing here to see.",
+    sub: "Open payments cannot carry a message, so there is nothing here to see.",
   },
 ];
 

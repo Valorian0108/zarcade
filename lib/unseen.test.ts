@@ -154,9 +154,9 @@ describe("the leak meter, driven by the real facts", () => {
     expect(leakedParts(HIDDEN)).toEqual([]);
   });
 
-  it("reports two of four for an open payment, and not the sender or the note", () => {
-    // Two honest omissions. An open payment cannot carry a note at all, so there
-    // is no note to leak. And the sender stays hidden because the coins leave the
+  it("reports two of four for an open payment, and not the sender or the message", () => {
+    // Two honest omissions. An open payment cannot carry a message at all, so there
+    // is no message to leak. And the sender stays hidden because the coins leave the
     // shielded pool, which never says which of its users they came from.
     // Counting either would overstate what the network learned.
     expect(leakFromFacts(OPEN)).toBe(0.5);
