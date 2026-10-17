@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Watcher, WatcherCrowd } from "@/components/watcher";
+import type { WatcherMood } from "@/components/watcher";
 import { KeyLock } from "@/components/keylock";
 import { useMotionPref } from "@/components/motion-pref";
 import { Glyph } from "./glyphs";
@@ -43,6 +44,15 @@ export function Cabinet({
   const [hovered, setHovered] = useState(false);
   const playable = game.status === "playable" && Boolean(game.href);
 
+  // The Unseen cabinet wears the Watcher in his hiding state, not his
+  // watching state. Everywhere else the house shows a sealed payment the
+  // Watcher is blind (lid shut, lantern dim): the world preview on
+  // "sealed", the reveal divider on "hidden", the room door on entry. The
+  // hub cabinet was the one place still showing him calm and watching, so
+  // Unseen's head image said the opposite of the cabinet's truth. Owner's
+  // playtest 2026-10-17: "unseen is meant to be the watcher hiding."
+  const watcherMood: WatcherMood = game.id === "unseen" ? "blind" : "calm";
+
   function open() {
     if (!playable) return;
     // D-078: a cabinet with room copy opens its room first; the room then
@@ -72,7 +82,7 @@ export function Cabinet({
             ) : game.cast === "keylock" ? (
               <KeyLock width={hero ? 150 : 92} />
             ) : (
-              <Watcher mood="calm" width={hero ? 116 : 58} />
+              <Watcher mood={watcherMood} width={hero ? 116 : 58} />
             )
           ) : game.glyph ? (
             <span className="gm-cabGlyph">
