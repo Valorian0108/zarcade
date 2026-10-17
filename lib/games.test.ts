@@ -54,4 +54,14 @@ describe("the hub list", () => {
     expect(unseen?.status).toBe("playable");
     expect(unseen?.href).toBe("/games/unseen");
   });
+
+  it("lights cabinet three with its own head image, never the Watcher", () => {
+    // Owner's playtest 2026-10-17: The Proof Puzzle must not wear the
+    // Watcher on its screen. The key and the lock are its own piece.
+    const proof = GAMES.find((g) => g.id === "proof");
+    expect(proof?.status).toBe("playable");
+    expect(proof?.href).toBe("/games/proof");
+    expect(proof?.cast).toBe("keylock");
+    expect(proof?.about).not.toMatch(/turns his back|turns its back/);
+  });
 });

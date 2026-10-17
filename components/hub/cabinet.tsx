@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Watcher, WatcherCrowd } from "@/components/watcher";
+import { KeyLock } from "@/components/keylock";
 import { useMotionPref } from "@/components/motion-pref";
 import { Glyph } from "./glyphs";
 import type { GameEntry } from "@/lib/games";
 
 /**
  * One arcade cabinet (D-019 design, Layer 5 skin per D-050). The truth the
- * styling tells: a lit cabinet is a live machine (gold rim, screen on, the
- * Watcher alive inside), a dark cabinet is sealed (screen off, faint glyph,
+ * styling tells: a lit cabinet is a live machine (gold rim, screen on, its
+ * own cast alive inside: the Watcher, the crowd, or the key and the lock),
+ * a dark cabinet is sealed (screen off, faint glyph,
  * "coming soon", not clickable, so no dead links).
  *
  * Motion budget:
@@ -67,6 +69,8 @@ export function Cabinet({
           {playable ? (
             game.cast === "crowd" ? (
               <WatcherCrowd width={hero ? 150 : 84} />
+            ) : game.cast === "keylock" ? (
+              <KeyLock width={hero ? 150 : 92} />
             ) : (
               <Watcher mood="calm" width={hero ? 116 : 58} />
             )

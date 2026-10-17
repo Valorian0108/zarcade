@@ -579,6 +579,10 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   animation: none;
 }
 
+.gm-watcher[data-mood="shut"] .gm-wEye {
+  animation: none;
+}
+
 .gm-wLid {
   transform-box: fill-box;
   transform-origin: top;
@@ -587,6 +591,12 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
 }
 
 .gm-watcher[data-mood="blind"] .gm-wLid {
+  transform: scaleY(1);
+}
+
+/* shut: the lid falls but the stance and the lantern stay calm, because
+   closing an eye on purpose is not the same as being locked out. */
+.gm-watcher[data-mood="shut"] .gm-wLid {
   transform: scaleY(1);
 }
 
@@ -620,6 +630,88 @@ html[data-motion="less"] .gm-wPupil,
 html[data-motion="less"] .gm-wFlame,
 html[data-motion="less"] .gm-wMote1,
 html[data-motion="less"] .gm-wMote2 {
+  animation: none;
+}
+
+/* ---------- the key and the lock (cabinet three head image) ----------
+   The owner's playtest (2026-10-17): The Proof Puzzle must not wear the
+   Watcher as its head image. Its own piece is a padlock in the Watcher's
+   colours with its key in the keyhole. The one idle loop is the story in
+   four beats: the key turns, the shackle swings open on its left leg, it
+   holds, then both come home. Transform only, and still under "less". */
+
+.gm-keylock {
+  position: relative;
+  z-index: 1;
+  width: 148px;
+}
+
+.gm-keylock svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 26px rgba(8, 6, 12, 0.6));
+}
+
+.gm-klFloat {
+  animation: gmFloat 6s ease-in-out infinite alternate;
+}
+
+.gm-klGlow {
+  opacity: 0.7;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gmFlicker 3.2s ease-in-out infinite;
+}
+
+/* the key pivots exactly at the keyhole: its fill box starts there. */
+.gm-klKey {
+  transform-box: fill-box;
+  transform-origin: 0% 0%;
+  animation: gmKeyTurn 6s ease-in-out infinite;
+}
+
+/* the shackle pivots at its left leg, where it enters the body. */
+.gm-klShackle {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: gmShackleOpen 6s ease-in-out infinite;
+}
+
+@keyframes gmKeyTurn {
+  0%,
+  14% {
+    transform: rotate(0deg);
+  }
+  26%,
+  68% {
+    transform: rotate(42deg);
+  }
+  82%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes gmShackleOpen {
+  0%,
+  28% {
+    transform: rotate(0deg);
+  }
+  40%,
+  62% {
+    transform: rotate(-26deg);
+  }
+  76%,
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+html[data-motion="less"] .gm-klFloat,
+html[data-motion="less"] .gm-klGlow,
+html[data-motion="less"] .gm-klKey,
+html[data-motion="less"] .gm-klShackle {
   animation: none;
 }
 
