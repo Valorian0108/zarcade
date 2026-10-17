@@ -272,8 +272,8 @@ export function Proof() {
                 said the code out loud.
               </p>
               <p className="gm-goalText">
-                The Watcher saw only the safe open. One thousand TAZ is on its way, and
-                the public record below shows only that a payment passed the check.
+                The Watcher saw only the safe open. One thousand zatoshis is on its way,
+                and the public record below shows only that a payment passed the check.
               </p>
             </>
           ) : (

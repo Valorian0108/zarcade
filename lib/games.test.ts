@@ -63,6 +63,10 @@ describe("the hub list", () => {
     expect(proof?.href).toBe("/games/proof");
     expect(proof?.cast).toBe("keylock");
     expect(proof?.about).not.toMatch(/turns his back|turns its back/);
+    // Owner's playtest 2026-10-17 (D-105): the story must name the real
+    // amount the machine moves, never the stale pretend "thousand TAZ".
+    expect(proof?.about).not.toMatch(/thousand TAZ/i);
+    expect(proof?.about).toMatch(/one thousand zatoshis/i);
   });
 
   it("names the real math once, in gold, in cabinet three's teaches line (D-103)", () => {
