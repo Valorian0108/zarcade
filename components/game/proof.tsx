@@ -70,13 +70,16 @@ function pickQuestions(code: number[]): Question[] {
 }
 
 /**
- * Every three-digit code, printed as one wall of small type on the end
- * screen (D-102). The wall IS the proof that the Watcher holds nothing:
- * all he ever heard was one word, so from his seat every line of this
- * wall is still possible. The player can find their own code in it
- * because they typed it. He cannot.
+ * The thousand-code wall, shown as one row at the interface's own text
+ * size (D-102, resized in D-104 after the owner's playtest: the full
+ * print of all one thousand codes deformed the card). The row plus the
+ * trailing dots carries the same truth: every three-digit code is still
+ * possible for the Watcher, and the dots keep going to 999. The player
+ * knows their own code because they typed it. He does not, because one
+ * word is all he ever got.
  */
-const CODE_WALL = Array.from({ length: 1000 }, (_, i) => String(i).padStart(3, "0")).join(" ");
+const CODE_ROW =
+  Array.from({ length: 12 }, (_, i) => String(i).padStart(3, "0")).join(" ") + " …";
 
 export function Proof() {
   const [step, setStep] = useState<Step>("setup");
@@ -304,12 +307,8 @@ export function Proof() {
             in there. You can find it because you typed it. He cannot, because one word
             is all he ever got.
           </p>
-          <p
-            className="gm-callSub"
-            style={{ fontSize: 10, lineHeight: 1.7, opacity: 0.6, marginTop: 8 }}
-            aria-hidden="true"
-          >
-            {CODE_WALL}
+          <p className="gm-goalText" aria-hidden="true">
+            {CODE_ROW}
           </p>
         </div>
         <div className="gm-goalCard gm-crowdFacts">
