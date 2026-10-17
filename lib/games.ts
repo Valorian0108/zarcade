@@ -66,11 +66,20 @@ export const GAMES: GameEntry[] = [
       "A row of hooded figures, a list of real records with links to the explorer, and a meter that counts what you managed to read.",
   },
   {
+    // Cabinet three, lit after the owner scoped it (D-089).
     id: "proof",
     name: "The Proof Puzzle",
     teach: "Show a guard you know a secret, without saying it.",
-    status: "soon",
+    status: "playable",
+    href: "/games/proof",
     glyph: "proof",
+    cast: "watcher",
+    about:
+      "You owe the Watcher one thousand TAZ. Your money is in a vault at the arcade, but you hit your monthly limit and the vault will not open until tomorrow. You cannot pay him now. He will not take your word for it. You set a secret three-digit code and slide your key card into the machine three times. Each slide asks a question about your code. Answer yes or no. The Watcher never sees the code.",
+    teaches:
+      "Before the network accepts a payment, it checks that the money is real, that it has not been spent before, and that it is going where it says. It checks all three without showing who paid, who got paid, or how much. That is how Zcash keeps payments private while the network still agrees they are valid.",
+    sees:
+      "A key card, a safe with your secret code, three yes-or-no questions, and a receipt that shows only that a payment happened.",
   },
   {
     id: "doublespend",
