@@ -10,12 +10,17 @@ import type { WatcherMood } from "@/components/watcher";
  * (2026-10-17). The promise on screen and the thing that happens are the
  * same thing now:
  *
- *   1. You type a three-digit code. While any digit sits in the box the
- *      Watcher's eye shuts (the "shut" mood), because the copy says he
- *      closes his eyes and he actually does.
- *   2. He asks three yes-or-no questions computed from your code, drawn
- *      fresh each run so the answers cannot be memorised. Each question
- *      reads from its own slot, so you meet three different questions.
+ *   1. You type a three-digit code. It goes into the safe. While any digit
+ *      sits in the box the Watcher's eye shuts (the "shut" mood), because
+ *      the copy says he closes his eyes and he actually does.
+ *   2. He cannot read the safe, so he asks it. Three yes-or-no questions,
+ *      drawn fresh each run so the answers cannot be memorised, each read
+ *      from its own slot. The safe checks every answer against the code
+ *      inside it. The Watcher hears only open or shut (owner's question
+ *      2026-10-17: who checks, if nobody knows the code? The safe does,
+ *      because the code lives in the safe. On the live chain the same
+ *      shape is carried by math built from the secret, named in one line
+ *      on the receipt and left parked there).
  *   3. Three matching answers open the safe and a SIMULATED payment of
  *      1,000 TAZ moves. The public record shows only that a payment passed
  *      the check, and says plainly that the receipt is a model.
@@ -117,8 +122,8 @@ export function Proof() {
           <div className="gm-goalCard">
             <p className="gm-goalLabel">Set your code</p>
             <p className="gm-goalText">
-              Pick any three-digit number and type it in the box. The Watcher closes his
-              eyes while you type. He never sees the code.
+              Pick any three-digit number and type it in the box. The code goes into the
+              safe. The Watcher closes his eyes while you type, and he never sees it.
             </p>
           </div>
           <div
@@ -136,11 +141,6 @@ export function Proof() {
               aria-label="Your secret three digit code"
               className="w-32 h-12 text-center text-xl tracking-widest border border-input rounded-lg bg-background px-4 focus:outline-none focus:ring-2 focus:ring-ring"
             />
-            <p className="gm-callSub">
-              {code.length > 0
-                ? "His eye is shut now. It opens again when the questions start."
-                : "His eye stays open until you type."}
-            </p>
           </div>
         </>
       );
@@ -154,8 +154,8 @@ export function Proof() {
             <p className="gm-goalLabel">The Watcher asks</p>
             <p className="gm-goalText">{q.text}</p>
             <p className="gm-callSub">
-              Answer from the code you can see on your screen. Saying yes or no never
-              tells him the digits.
+              You answer to the safe, not to him. The safe checks each answer against the
+              code inside it. He hears only open or shut.
             </p>
           </div>
           <div
@@ -181,18 +181,18 @@ export function Proof() {
           {allCorrect ? (
             <>
               <p className="gm-goalText">
-                The safe opens. Every answer matched your code, and you never said the
-                code out loud.
+                The safe opens. Every answer matched the code inside it, and you never
+                said the code out loud.
               </p>
               <p className="gm-goalText">
-                One thousand TAZ moves. The public record shows only that a payment
-                passed the check.
+                The Watcher saw only the safe open. One thousand TAZ moves, and the
+                public record shows only that a payment passed the check.
               </p>
             </>
           ) : (
             <p className="gm-goalText">
-              The safe stays closed. At least one answer did not match your code, so the
-              Watcher is not convinced. Nothing moves.
+              The safe stays closed. At least one answer did not match the code inside
+              it. The Watcher sees a closed safe, and nothing moves.
             </p>
           )}
         </div>
@@ -214,8 +214,9 @@ export function Proof() {
             Verdict: {allCorrect ? "SUCCESS (Fully Private)" : "FAILED"}
           </p>
           <p className="gm-callSub">
-            This receipt is a model of the real thing. The live chain hides the same
-            three lines on a shielded payment.
+            This receipt is a model of the real thing. On the live chain the check runs
+            on math built from the secret, so the network never holds the secret either.
+            Here the safe stands in for that math.
           </p>
         </div>
       </>
@@ -235,8 +236,8 @@ export function Proof() {
         panelLabel: "The safe",
         caption: (
           <p>
-            Pick a secret three-digit code. The Watcher closes his eyes while you type
-            it, so he cannot see it.
+            Pick a secret three-digit code. It goes into the safe. The Watcher closes
+            his eyes while you type it, so he cannot see it.
           </p>
         ),
         description: "Type your code in the box. Three digits start the round.",
@@ -249,8 +250,8 @@ export function Proof() {
         panelLabel: "The question",
         caption: (
           <p>
-            The Watcher asks three questions about your code, one at a time. Answer yes
-            or no. He checks each answer against the code he never saw.
+            The Watcher cannot read your code, so he asks the safe instead. The safe
+            checks each answer against the code inside it, and only says open or shut.
           </p>
         ),
         description: "Three matching answers open the safe.",
@@ -267,8 +268,8 @@ export function Proof() {
         </p>
       ),
       description: allCorrect
-        ? "He is convinced without ever seeing the code. That is the whole trick."
-        : "A wrong answer means no proof, and no proof means no payment.",
+        ? "The safe checked every answer without the code ever leaving it. The Watcher saw only the verdict. That is the whole trick."
+        : "A wrong answer means the safe stays shut. A shut safe proves nothing, so no payment moves.",
       leakLabel: "Nothing pinned down, and that is the correct reading.",
     };
   };
