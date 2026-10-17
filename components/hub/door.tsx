@@ -244,11 +244,11 @@ export function Door() {
       </main>
 
       {/* D-056: the quiet footer. The contrast line is the point: payments
-          can be private, this code is public. It arrives after the entry
-          button ignites and never competes with it. */}
+          can be private, the chain's record is public. It arrives after the
+          entry button ignites and never competes with it. */}
       <footer className="gm-doorFoot">
         <p className="gm-doorFootLine">
-          Your payments can be private. This code is public.
+          Your payments can be private. The chain&apos;s record is public.
         </p>
         <a
           className="gm-ghLink"
