@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { GameFrame } from "@/components/game/frame";
 import type { WatcherMood } from "@/components/watcher";
@@ -21,9 +21,13 @@ import type { WatcherMood } from "@/components/watcher";
  *      because the code lives in the safe. On the live chain the same
  *      shape is carried by math built from the secret, named in one line
  *      on the receipt and left parked there).
- *   3. Three matching answers open the safe and a SIMULATED payment of
- *      1,000 TAZ moves. The public record shows only that a payment passed
- *      the check, and says plainly that the receipt is a model.
+ *   3. Three matching answers open the safe and the house makes one REAL
+ *      shielded payment of 1,000 zatoshis through the single money route
+ *      (D-103), sending the same one word Unseen sends. The zero-knowledge
+ *      proof is built and checked inside the wallet, in the background,
+ *      exactly as it is for every Unseen round. The receipt shows the real
+ *      txid and its explorer link. A shut safe sends nothing, and the
+ *      record card says the public record has nothing new in it.
  *
  * No wallet, no sidecar, no real transaction: the owner parked those while
  * this cabinet finds its feet. The room's teaches line carries the truth
@@ -33,6 +37,18 @@ import type { WatcherMood } from "@/components/watcher";
 type Step = "setup" | "ask" | "end";
 
 type Question = { text: string; answer: boolean };
+
+/**
+ * The state of the real payment (D-103). It is never part of the puzzle:
+ * the safe opens first, and the payment is the house keeping its side of
+ * the story in the background.
+ */
+type PayState =
+  | { kind: "none" }
+  | { kind: "working" }
+  | { kind: "waiting"; note: string }
+  | { kind: "sent"; txid: string; explorerUrl: string }
+  | { kind: "unsent"; note: string };
 
 /**
  * The question pool. Every question is answerable by looking at your own
@@ -68,6 +84,8 @@ export function Proof() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [pay, setPay] = useState<PayState>({ kind: "none" });
+  const payStarted = useRef(false);
 
   /**
    * Every keystroke lands in the box, so typing always works. The round
@@ -104,6 +122,8 @@ export function Proof() {
     setQuestions(null);
     setAnswers([]);
     setFeedback(null);
+    payStarted.current = false;
+    setPay({ kind: "none" });
   }
 
   const allCorrect = questions
@@ -123,6 +143,61 @@ export function Proof() {
       : step === "setup" && code.length > 0
         ? "shut"
         : "calm";
+
+  /**
+   * The real payment (D-103). The moment the safe opens, the website sends
+   * the same one word Unseen sends, to the same single money route, and
+   * the wallet does the zero-knowledge work in the background where it
+   * already lives. One automatic retry when the wallet answers that it is
+   * busy (429) or still settling (409), capped at 90 seconds, never a
+   * loop, never a second route. A shut safe never reaches this effect.
+   */
+  useEffect(() => {
+    if (step !== "end" || !allCorrect || payStarted.current) return;
+    payStarted.current = true;
+
+    let timer: number | null = null;
+
+    async function trySend(attempt: number) {
+      setPay({ kind: "working" });
+      let res: Response;
+      try {
+        res = await fetch("/api/game/unseen/send", {
+          method: "POST",
+          body: JSON.stringify({ choice: "hide" }),
+        });
+      } catch {
+        setPay({
+          kind: "unsent",
+          note: "The arcade could not reach its wallet. Nothing has been sent.",
+        });
+        return;
+      }
+      if (res.ok) {
+        const data = (await res.json()) as { txid: string; explorerUrl: string };
+        setPay({ kind: "sent", txid: data.txid, explorerUrl: data.explorerUrl });
+        return;
+      }
+      const data = (await res.json().catch(() => null)) as {
+        problem?: string;
+        retryAfterSeconds?: number;
+      } | null;
+      const note =
+        data?.problem ?? "The payment did not go through. Nothing has been sent.";
+      if ((res.status === 429 || res.status === 409) && attempt === 0) {
+        const wait = Math.min(Math.max(data?.retryAfterSeconds ?? 30, 1), 90);
+        setPay({ kind: "waiting", note });
+        timer = window.setTimeout(() => void trySend(1), wait * 1000);
+        return;
+      }
+      setPay({ kind: "unsent", note });
+    }
+
+    void trySend(0);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, [step, allCorrect]);
 
   const stage = () => {
     if (step === "setup") {
@@ -194,8 +269,8 @@ export function Proof() {
                 said the code out loud.
               </p>
               <p className="gm-goalText">
-                The Watcher saw only the safe open. One thousand TAZ moves, and the
-                public record shows only that a payment passed the check.
+                The Watcher saw only the safe open. One thousand TAZ is on its way, and
+                the public record below shows only that a payment passed the check.
               </p>
             </>
           ) : (
@@ -239,18 +314,54 @@ export function Proof() {
         </div>
         <div className="gm-goalCard gm-crowdFacts">
           <p className="gm-goalLabel">Public record</p>
-          <p className="gm-goalText">Transaction ID: 0x8f93…4a2c</p>
-          <p className="gm-goalText">Sender: [ENCRYPTED / HIDDEN]</p>
-          <p className="gm-goalText">Receiver: [ENCRYPTED / HIDDEN]</p>
-          <p className="gm-goalText">Amount sent: [ENCRYPTED / HIDDEN]</p>
-          <p className="gm-goalText">
-            Verdict: {allCorrect ? "SUCCESS (Fully Private)" : "FAILED"}
-          </p>
-          <p className="gm-callSub">
-            This receipt is a model of the real thing. On the live chain the check runs
-            on math built from the secret, so the network never holds the secret either.
-            Here the safe stands in for that math.
-          </p>
+          {!allCorrect ? (
+            <>
+              <p className="gm-goalText">Verdict: FAILED</p>
+              <p className="gm-goalText">
+                No payment moved. The public record has nothing new in it.
+              </p>
+            </>
+          ) : pay.kind === "sent" ? (
+            <>
+              <p className="gm-goalText">
+                Transaction ID:{" "}
+                <a
+                  className="gm-receiptLink"
+                  href={pay.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {pay.txid.slice(0, 8)}…{pay.txid.slice(-4)}
+                </a>
+              </p>
+              <p className="gm-goalText">Sender: [ENCRYPTED / HIDDEN]</p>
+              <p className="gm-goalText">Receiver: [ENCRYPTED / HIDDEN]</p>
+              <p className="gm-goalText">Amount sent: [ENCRYPTED / HIDDEN]</p>
+              <p className="gm-goalText">Verdict: SUCCESS (Fully Private)</p>
+              <p className="gm-callSub">
+                This payment is real. It moved on the testnet when the safe opened. The
+                record hides the same three lines you see here, and the link opens the
+                explorer so you can check for yourself.
+              </p>
+            </>
+          ) : pay.kind === "unsent" ? (
+            <>
+              <p className="gm-goalText">The safe opened, but the payment did not move.</p>
+              <p className="gm-goalText">{pay.note}</p>
+              <p className="gm-goalText">
+                Nothing has been sent. The public record has nothing new in it.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="gm-goalText">The safe opened. The payment is moving.</p>
+              <p className="gm-goalText">
+                {pay.kind === "waiting"
+                  ? pay.note
+                  : "The wallet is working. The record appears here when it lands."}
+              </p>
+            </>
+          )}
         </div>
       </>
     );

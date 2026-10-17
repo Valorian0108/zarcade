@@ -79,7 +79,7 @@ export const GAMES: GameEntry[] = [
     about:
       "You owe the Watcher one thousand TAZ. Your money is in a vault at the arcade, but you hit your monthly limit and the vault will not open until tomorrow. You cannot pay him now. He will not take your word for it. You set a secret three-digit code inside the safe while the Watcher closes his eyes. Then he asks the safe three questions about your code. You answer yes or no. The safe checks each answer against the code inside it and only says open or shut. If the safe opens, the payment moves. The Watcher never sees the code.",
     teaches:
-      "Before the network accepts a payment, it checks that the money is real, that it has not been spent before, and that it is going where it says. It checks all three without showing who paid, who got paid, or how much. The check runs on math built from the secret itself, so nobody has to hold the secret to verify it. That is how Zcash keeps payments private while the network still agrees they are valid.",
+      "Before the network accepts a payment, it checks that the money is real, that it has not been spent before, and that it is going where it says. It checks all three without showing who paid, who got paid, or how much. The check runs on math built from the secret itself, so nobody has to hold the secret to verify it. That math has a name: a {{zero-knowledge proof}}. It is the only thing the network ever sees. That is how Zcash keeps payments private while the network still agrees they are valid.",
     sees:
       "A safe with your secret code, three yes-or-no questions, and a receipt that shows only that a payment happened.",
   },

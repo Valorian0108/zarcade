@@ -64,4 +64,10 @@ describe("the hub list", () => {
     expect(proof?.cast).toBe("keylock");
     expect(proof?.about).not.toMatch(/turns his back|turns its back/);
   });
+
+  it("names the real math once, in gold, in cabinet three's teaches line (D-103)", () => {
+    const proof = GAMES.find((g) => g.id === "proof");
+    const glosses = glossParts(proof?.teaches ?? "").filter((p) => p.gloss);
+    expect(glosses.map((p) => p.text)).toEqual(["zero-knowledge proof"]);
+  });
 });
