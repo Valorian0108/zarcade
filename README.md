@@ -42,15 +42,6 @@ ones, both mined on 2026-10-11:
 
 ## How it is built
 
-```mermaid
-flowchart LR
-  P[Player picks hide or open] --> R["POST /api/game/unseen/send"]
-  R --> G{Three guards}
-  G -->|refuse| X[No money moves]
-  G -->|pass| W[Rust sidecar with the house wallet]
-  W -->|signed transaction| C[(Zcash testnet)]
-```
-
 The front end is Next.js 16 with React 19 and TypeScript. The wallet is a
 Rust sidecar built on axum and librustzcash. Its seed never leaves the
 sidecar's data directory. On a dev machine it listens on `127.0.0.1:9070`,
