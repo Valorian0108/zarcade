@@ -598,8 +598,7 @@
     call. PENDING: owner verdict on the rooms themselves.
     Owner verdict on first full play: "this is dope, keep her"
     (2026-10-13).
-  - Cabinet three: The Proof Puzzle. D-089: Schnorr-style three-move proof cabinet, Proposed — one small read-only hash endpoint,
-    no wallet changes.
+  - Cabinet three: The Proof Puzzle. Shipped as the Watcher's Safe (D-103 through D-107): you prove you know a three-digit code without saying it, the safe checks three yes-or-no questions, and a real shielded payment of one thousand zatoshis moves on testnet when all three match. The story names who pays (the arcade), the payment moves only when all three answers match, and the cabinet head is the key and the lock — not the Watcher (D-078). The hub's Watcher ducks out of sight instead (D-107). No longer proposed; no Schnorr endpoint.
   - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
     cheap on the existing rails.
   - Not scheduled: Auditor's Key and Vault Run (new Rust wallet work),

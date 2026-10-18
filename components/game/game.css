@@ -240,6 +240,15 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   color: var(--body);
 }
 
+.gm-recordLine {
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .gm-goalCard {
   background: var(--raised);
   border: 1px solid var(--line);

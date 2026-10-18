@@ -66,7 +66,7 @@ export const GAMES: GameEntry[] = [
       "A row of hooded figures, a list of real records with links to the explorer, and a meter that counts what you managed to read.",
   },
   {
-    // Cabinet three, lit after the owner scoped it (D-089).
+    // Cabinet three, shipped as the Watcher's Safe (D-103 through D-107).
     id: "proof",
     name: "The Proof Puzzle",
     teach: "Show a guard you know a secret, without saying it.",
@@ -77,7 +77,7 @@ export const GAMES: GameEntry[] = [
     // Watcher as its head image. Its own piece is the key and the lock.
     cast: "keylock",
     about:
-      "You owe the Watcher one thousand zatoshis. Your money is in a vault at the arcade, but you hit your monthly limit and the vault will not open until tomorrow. You cannot pay him now. He will not take your word for it. You set a secret three-digit code inside the safe while the Watcher closes his eyes. Then he asks the safe three questions about your code. You answer yes or no. The safe checks each answer against the code inside it and only says open or shut. If the safe opens, the payment moves. The Watcher never sees the code.",
+      "The arcade pays one thousand zatoshis when the safe opens, and nothing if it does not. You set a secret three-digit code inside the safe while the Watcher closes his eyes. Then he asks the safe three questions about your code. You answer yes or no. The safe checks each answer against the code inside it and only says open or shut. If all three match, the payment moves. The Watcher never sees the code.",
     teaches:
       "Before the network accepts a payment, it checks that the money is real, that it has not been spent before, and that it is going where it says. It checks all three without showing who paid, who got paid, or how much. The check runs on math built from the secret itself, so nobody has to hold the secret to verify it. That math has a name: a {{zero-knowledge proof}}. It is the only thing the network ever sees. That is how Zcash keeps payments private while the network still agrees they are valid.",
     sees:

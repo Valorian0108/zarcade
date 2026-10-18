@@ -46,6 +46,7 @@ export function GameFrame({
   description,
   showLeakMeter = true,
   receipts = [],
+  record,
   caption,
   children,
 }: {
@@ -64,6 +65,9 @@ export function GameFrame({
   showLeakMeter?: boolean;
   /** Real payments so far, each with its explorer link. */
   receipts?: FrameReceipt[];
+  /** What just happened on this turn, shown as it grows (the running record
+     is static no longer: each answer lights up a line during the questions). */
+  record?: { label: string; note: string }[];
   /** The teaching prose, below the stage (D-046). Two short paragraphs max. */
   caption?: ReactNode;
   children: ReactNode;
@@ -128,6 +132,14 @@ export function GameFrame({
               >
                 Check it on the explorer
               </a>
+            </div>
+          ))}
+
+          {record?.map((line) => (
+            <div className="gm-recordLine" key={line.label}>
+              <span className="gm-mono">{line.label}</span>
+              <span className="gm-receiptDot" aria-hidden="true" />
+              <span>{line.note}</span>
             </div>
           ))}
 

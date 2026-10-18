@@ -209,8 +209,7 @@ export function Proof() {
           <div className="gm-goalCard">
             <p className="gm-goalLabel">Set your code</p>
             <p className="gm-goalText">
-              Pick any three-digit number and type it in the box. The code goes into the
-              safe. The Watcher closes his eyes while you type, and he never sees it.
+              Type three digits into the box. The round starts by itself.
             </p>
           </div>
           <div
@@ -375,7 +374,7 @@ export function Proof() {
   } => {
     if (step === "setup") {
       return {
-        chip: ["Round 0 of 3", "Your secret code"],
+        chip: ["Code", "Your secret code"],
         panelLabel: "The safe",
         caption: (
           <p>
@@ -389,7 +388,7 @@ export function Proof() {
     }
     if (step === "ask") {
       return {
-        chip: [`Round ${answers.length + 1} of 3`, "The Watcher asks"],
+        chip: [`Question ${answers.length + 1} of 3`, "The Watcher asks"],
         panelLabel: "The question",
         caption: (
           <p>
@@ -419,6 +418,14 @@ export function Proof() {
 
   const s = meta();
 
+  const record =
+    step === "ask" && questions
+      ? questions.map((q, i) => ({
+          label: q.text,
+          note: answers[i] === undefined ? "—" : answers[i] ? "open" : "shut",
+        }))
+      : [];
+
   return (
     <GameFrame
       title="The Proof Puzzle"
@@ -430,6 +437,7 @@ export function Proof() {
       leakLabel={s.leakLabel}
       description={s.description}
       showLeakMeter={false}
+      record={record}
       caption={s.caption}
     >
       {stage()}
