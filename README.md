@@ -65,7 +65,6 @@ fields are refused, not ignored. Three guards run before the wallet is
 touched: a global pause, a per-visitor hourly share, and a daily ceiling for
 the whole arcade.
 
-Real numbers: this README avoids them except for what the tests themselves prove:
 
 - 112 tests pin the money rules down. I ran the suite myself before committing this file.
 
