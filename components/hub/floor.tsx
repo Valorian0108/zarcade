@@ -47,7 +47,7 @@ export function Floor() {
         <div className="gm-floorRoom">
           {hero ? <Cabinet game={hero} hero /> : null}
           <div className="gm-floorRest">
-            {rest.map((game, i) => (
+            {rest.filter((game) => game.status === "playable").map((game, i) => (
               <Cabinet key={game.id} game={game} index={i} />
             ))}
           </div>
@@ -55,8 +55,8 @@ export function Floor() {
 
         <p className="gm-floorNote">
           {liveCount === 1
-            ? "One machine you can play right now. The rest are still being built."
-            : `${liveCount} machines you can play right now. The rest are still being built.`}
+            ? "One machine you can play right now. More games approaching."
+            : `${liveCount} machines you can play right now. More games approaching.`}
         </p>
       </main>
     </div>
