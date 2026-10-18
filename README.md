@@ -69,7 +69,7 @@ Real numbers: this README avoids them except for what the tests themselves prove
 
 - 112 tests pin the money rules down. I ran the suite myself before committing this file.
 
-Everything else — fees, build time, confirmation wait — is best read off a real receipt. Play a round at `/games/unseen` and check the txid link yourself; the machine never shows a number it didn't move on chain.
+Everything else — fees, build time, confirmation wait — is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.
 
 The house wallet at the moment of writing (`GET /api/house/status`, address
 fields trimmed):
