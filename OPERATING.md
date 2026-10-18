@@ -65,10 +65,10 @@ Facts to plan with:
   proof per coin, roughly twelve seconds each. Run it before people arrive,
   not while they wait, because nobody can play during it. Anyone who tries
   is told the arcade is refilling rather than being left to wonder (D-035).
-- The fee is 5,000 zatoshis per logical action (ZIP-317). For 40 coins paid
-  out of one large coin that is 205,000. It rises if the wallet has to
-  gather money from several small coins instead, because inputs count as
-  actions too (`RESEARCH.md`, item I7).
+- The fee is 10,000 zatoshis for a hidden payment and 15,000 for an open
+  payment (observed ZIP-317 fees, lib/zcash/config.ts). It rises if the wallet
+  has to gather money from several small coins instead, because inputs count
+  as actions too (`RESEARCH.md`, item I7).
 - Every coin must be worth more than 5,000 zatoshis, or the wallet treats it
   as dust and will never spend it (`RESEARCH.md`, items I5 and I7).
 - The coins stay in the house wallet, so the only real cost is the fee.

@@ -22,14 +22,6 @@ ones, both mined on 2026-10-11:
   in block 4,488,905. The explorer gives it a privacy score of 0 out of 100
   and names the amount and the recipient.[^1]
 
-## What you see
-
-![The door: the ZARCADE sign, and the Watcher keeping watch](assets/door.png)
-
-![The ask: the teaching line above two choices, hide or open](assets/ask.png)
-
-![The reveal: the amount you sent, and the receipts from the chain](assets/reveal.png)
-
 ## Hide versus open, side by side
 
 | | Hidden | Open |
@@ -59,25 +51,7 @@ the whole arcade.
 
 - 112 tests pin the money rules down. I ran the suite myself before committing this file.
 
-Everything else — fees, build time, confirmation wait — is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.
-
-The house wallet at the moment of writing (`GET /api/house/status`, address
-fields trimmed):
-
-```json
-{
-  "ok": true,
-  "refilling": false,
-  "network": "testnet",
-  "syncedTo": 4492642,
-  "zatoshis": 11428000,
-  "taz": "0.11428000",
-  "spendableZatoshis": 11412000,
-  "pendingChangeZatoshis": 0,
-  "transparentZatoshis": 16000,
-  "readyForRound": true
-}
-```
+Everything else - fees, build time, confirmation wait - is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.
 
 <details>
 <summary>Field note: the faucet that paid on a dead chain</summary>
@@ -197,7 +171,7 @@ components/    the game frame, the Watcher, the door and floor, the motion quest
 lib/games.ts   the cabinet list, single source of truth
 lib/zcash/     the bridge from the site to the sidecar
 sidecar/       Rust: the house wallet (its data/ folder is secret and gitignored)
-assets/        screenshots for this README
+assets/        no screenshots here; the README links to real receipts instead
 OPERATING.md   running the arcade: pot split, session checklist, troubleshooting
 AGREEMENT.md   how owner and assistant work together
 DECISIONS.md   every decision with its why

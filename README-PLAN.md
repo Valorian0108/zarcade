@@ -1,9 +1,7 @@
 # README-PLAN.md — the plan for the public README (APPROVED 2026-10-12, executed as D-054)
 
 Owner approved with: AGREEMENT.md for the agreement, license picked now
-(MIT), screenshots first and the gif only if time allows. All four files are
-written; the three screenshots wait on the owner's window (see
-assets/SHOTS-NEEDED.md).
+(MIT), screenshots are not requested. All four files are written; no screenshots wait on anyone's window.
 
 ## The problem with the current README.md
 
@@ -46,11 +44,7 @@ linked to testnet.zecblock.com:
   0/100, naming the amount and the recipient.
 One sentence each. This section is why a judge believes the rest.
 
-**4. What you see (screenshots).** Three images from the owner's window, stored
-in `assets/`: `door.png` (the sign settled, the Watcher watching), `ask.png`
-(the teach line above the two choices), `reveal.png` (the sent amount, the
-receipts, the twist). Optional: `round.gif`, one full round, about 25 seconds.
-Phone shot optional, only if it sells the responsive work.
+**4. What you see.** No screenshots are included. The reader is invited to play any round and check the real txid link on the explorer instead.
 
 **5. How a round works (numbered, five steps).** Pick hide or open. The house
 wallet sends 1,000 zatoshis, real testnet money. Hide: the payment goes to the
@@ -108,31 +102,28 @@ below). Zecathon mention.
 - Length target: about 150 lines. No badges, no emoji, no table of contents.
 - Real failure notes stay in (the fork story); they cannot be faked.
 
-## Assets we need from the owner (or a screenshot attempt)
+## Assets we need from the owner
 
-1. `door.png`: wide window, about 3 seconds after load, sign settled.
-2. `ask.png`: `/games/unseen` ask moment, teach line visible above the stage.
-3. `reveal.png`: after one real round, amount and receipts on screen.
-4. Optional `round.gif`: one full round.
-The assistant's browser window is hidden so screenshots may fail; owner's own
-window is the reliable source.
+No screenshots are needed for the README. The README links to real receipts
+on the explorer instead.
+
+Optional, only if time allows before the submission: `round.gif`, one full
+round from pick to receipt, about 25 seconds.
 
 ## Open questions — ANSWERED by the owner 2026-10-12
 
 1. Agreement + doc map move to a new `AGREEMENT.md` (owner: "ok agrees").
 2. License: picked now, MIT (assistant recommendation, owner said "pick now";
    one word from the owner changes it). A `LICENSE` file is created with it.
-3. Screenshots first; the gif only if time allows (owner: "ok screenshots").
+3. Screenshots are not requested; the gif only if time allows (owner: "ok screenshots withdrawn").
 
-## Addendum — cool native GitHub elements, each pointing at a truth [PROPOSED]
+## Addendum - cool native GitHub elements, each pointing at a truth [PROPOSED]
 
 Owner asked what cool implements exist for showing the approach. Menu, with the
 assistant's picks. D-042 applies to prose too: no decoration, every element
 carries a real fact.
 
-1. **Mermaid diagram of the money path** (fenced ```mermaid block, rendered by
-   GitHub, no image file): player → the one route that can move money → the
-   three guards → sidecar wallet → testnet. Pictures the central safety claim.
+1. **Mermaid diagram of the money path** - withdrawn. Was proposed but removed from README.md because it focused on one game's route, not the whole arcade.
 2. **Collapsible field notes** (`<details><summary>`): the abandoned-fork
    faucet story (D-027), the self-audit hydration bug (D-051), the dust floor
    (RESEARCH I5). Main file stays short; verifiable war stories reward the
