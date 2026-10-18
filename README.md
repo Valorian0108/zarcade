@@ -65,12 +65,11 @@ fields are refused, not ignored. Three guards run before the wallet is
 touched: a global pause, a per-visitor hourly share, and a daily ceiling for
 the whole arcade.
 
-Real numbers, measured on this machine:[^2]
+Real numbers: this README avoids them except for what the tests themselves prove:
 
-- A hidden payment costs 10,000 zatoshis in fees; an open payment costs 15,000.
-- A full round takes 21 to 22 seconds to build and sign.
-- Confirmation waits ran 34 to 99 seconds against blocks that average 23.6 seconds.
-- 112 tests pin the money rules down.
+- 112 tests pin the money rules down. I ran the suite myself before committing this file.
+
+Everything else — fees, build time, confirmation wait — is best read off a real receipt. Play a round at `/games/unseen` and check the txid link yourself; the machine never shows a number it didn't move on chain.
 
 The house wallet at the moment of writing (`GET /api/house/status`, address
 fields trimmed):
@@ -224,5 +223,3 @@ MIT. See [LICENSE](LICENSE).
 
 [^1]: Explorer labels and privacy scores from testnet.zecblock.com, fetched
      2026-10-11.
-[^2]: Measured during the B4 and B5 build phases on 2026-10-11. Details in
-     `RESEARCH.md`, items I1, I2, I5 and I7.
