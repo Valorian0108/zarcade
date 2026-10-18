@@ -67,11 +67,10 @@ the whole arcade.
 
 Real numbers, measured on this machine:[^2]
 
-- Fees follow ZIP-317: 5,000 zatoshis per logical action.
-- One zero-knowledge proof takes about 12 seconds to build.
-- A full round takes 21 to 29 seconds. Confirmation waits ran 34 to 99
-  seconds against blocks that average 23.6 seconds.
-- 76 tests pin the money rules down.
+- A hidden payment costs 10,000 zatoshis in fees; an open payment costs 15,000.
+- A full round takes 21 to 22 seconds to build and sign.
+- Confirmation waits ran 34 to 99 seconds against blocks that average 23.6 seconds.
+- 112 tests pin the money rules down.
 
 The house wallet at the moment of writing (`GET /api/house/status`, address
 fields trimmed):
