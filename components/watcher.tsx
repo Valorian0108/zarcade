@@ -2,7 +2,7 @@
 
 import "./game/game.css";
 
-export type WatcherMood = "calm" | "alert" | "blind" | "shut";
+export type WatcherMood = "calm" | "alert" | "blind" | "shut" | "hide";
 
 /**
  * The Watcher — "the public" as a character (STYLEGUIDE cast, D-010/D-015),
@@ -19,6 +19,9 @@ export type WatcherMood = "calm" | "alert" | "blind" | "shut";
  *            three, owner's playtest 2026-10-17): the lid shuts, but it
  *            stands calm and the lantern stays lit, because choosing not
  *            to look is not the same as being locked out.
+ *   hide  -> the ducking hide for the Unseen cabinet head (D-107): it
+ *            crouches low behind its own cloak, hood forward, lantern an
+ *            ember, and one eye peeks, in one slow sink-and-peek loop.
  *
  * Every loop is a CSS animation on a class, and every mood is a data attribute,
  * so the whole character is one SVG plus the stylesheet (game.css). It never
@@ -55,7 +58,9 @@ export function Watcher({
               ? "blind: you hid the payment, so it sees nothing and its lantern is dim"
               : mood === "shut"
                 ? "shut: it closes its eye on purpose while you set a secret, so it cannot see it"
-                : "calm: watching for payments it can read"
+                : mood === "hide"
+                  ? "hide: it ducks out of sight behind its own cloak with one eye peeking, because here the payments are hidden"
+                  : "calm: watching for payments it can read"
         }`}
       >
         <defs>

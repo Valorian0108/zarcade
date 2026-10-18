@@ -600,6 +600,52 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   transform: scaleY(1);
 }
 
+/* hide: the ducking hide for the Unseen cabinet head (D-107, owner's yes
+   2026-10-18). He crouches low behind his own cloak, hood forward, the
+   lantern dimmed to an ember and the light-motes gone, because a hiding
+   guard carries no bright lamp. One slow five second loop: sink and hide
+   with the lid down, rise a touch and peek with the lid half open, sink
+   again. Transform and lid only, in the house motion vocabulary. */
+.gm-watcher[data-mood="hide"] svg {
+  transform: translateY(8px) scale(0.92) rotate(-4deg);
+  animation: gmDuck 5s ease-in-out infinite;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wGlow {
+  opacity: 0.15;
+  animation: none;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wRim {
+  opacity: 0.12;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wEye {
+  animation: none;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wLid {
+  transform: scaleY(0.45);
+  animation: gmPeek 5s ease-in-out infinite;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wFlame {
+  opacity: 0.25;
+  animation: none;
+}
+
+.gm-watcher[data-mood="hide"] .gm-wMote1,
+.gm-watcher[data-mood="hide"] .gm-wMote2 {
+  opacity: 0;
+}
+
+/* Under "less" the duck holds the crouched peeking pose and never loops:
+   the base transforms above (crouch, half lid) are exactly that pose. */
+html[data-motion="less"] .gm-watcher[data-mood="hide"] svg,
+html[data-motion="less"] .gm-watcher[data-mood="hide"] .gm-wLid {
+  animation: none;
+}
+
 .gm-wPupil {
   animation: gmDrift 9s ease-in-out infinite alternate;
 }
@@ -1142,6 +1188,35 @@ html[data-motion="less"] .gm-klShackle {
   50% {
     transform: scale(1.12, 0.94);
     opacity: 1;
+  }
+}
+
+/* The ducking hide (D-107): sunk and hidden at the ends of the loop, risen
+   a touch and peeking in the middle. The lid mirrors the same beats, shut
+   when he sinks and half open when he peeks. */
+@keyframes gmDuck {
+  0%,
+  42%,
+  85%,
+  100% {
+    transform: translateY(8px) scale(0.92) rotate(-4deg);
+  }
+  55%,
+  70% {
+    transform: translateY(2px) scale(0.96) rotate(-1deg);
+  }
+}
+
+@keyframes gmPeek {
+  0%,
+  42%,
+  85%,
+  100% {
+    transform: scaleY(1);
+  }
+  55%,
+  70% {
+    transform: scaleY(0.45);
   }
 }
 

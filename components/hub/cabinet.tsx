@@ -44,14 +44,14 @@ export function Cabinet({
   const [hovered, setHovered] = useState(false);
   const playable = game.status === "playable" && Boolean(game.href);
 
-  // The Unseen cabinet wears the Watcher in his hiding state, not his
-  // watching state. Everywhere else the house shows a sealed payment the
-  // Watcher is blind (lid shut, lantern dim): the world preview on
-  // "sealed", the reveal divider on "hidden", the room door on entry. The
-  // hub cabinet was the one place still showing him calm and watching, so
-  // Unseen's head image said the opposite of the cabinet's truth. Owner's
-  // playtest 2026-10-17: "unseen is meant to be the watcher hiding."
-  const watcherMood: WatcherMood = game.id === "unseen" ? "blind" : "calm";
+  // The Unseen cabinet wears the Watcher ducking out of sight (D-107,
+  // owner's yes 2026-10-18): crouched behind his own cloak, lantern an
+  // ember, one eye peeking. The blind pose (D-106) was the first attempt at
+  // the same truth, but after seeing it on the hub the owner's verdict was
+  // that the duck is right, so the hub head now ducks. The blind pose stays
+  // in-game as the sealed-payment reaction. Every other Watcher cabinet
+  // keeps calm.
+  const watcherMood: WatcherMood = game.id === "unseen" ? "hide" : "calm";
 
   function open() {
     if (!playable) return;
