@@ -30,17 +30,6 @@ ones, both mined on 2026-10-11:
 
 ![The reveal: the amount you sent, and the receipts from the chain](assets/reveal.png)
 
-## How a round works
-
-1. You pick hide or open.
-2. The house wallet sends 1,000 zatoshis of testnet money. The amount and the
-   destination are fixed on the server, never by the player.
-3. Hidden: the payment lands in the shielded pool. Open: it lands at a
-   transparent address, in full public view.
-4. You get the receipt: the transaction id and, once it is mined, the block.
-5. The next player can go right away. The pot is split into confirmed small
-   coins ahead of time, so nobody waits for one large coin to settle.
-
 ## Hide versus open, side by side
 
 | | Hidden | Open |
@@ -193,9 +182,9 @@ chain data. The full system is written down in [STYLEGUIDE.md](STYLEGUIDE.md).
 ## Limits
 
 - Testnet only. No real money, ever.
-- Two machines are live: Unseen and The Crowd. Four cabinets are dark and
-  the floor says so: The Proof Puzzle, The Double-Spend Heist, The
-  Auditor's Key, The Vault Run.
+- Three machines are live: Unseen, The Crowd and The Proof Puzzle. Three
+  cabinets are dark and the floor says so: The Double-Spend Heist, The
+  Auditor's Key and The Vault Run.
 - One confirmation cannot be skipped, so round pacing depends on the chain.
 - The first sync is slow and the pot split is slower. Both are stated costs,
   not surprises.
@@ -206,7 +195,7 @@ chain data. The full system is written down in [STYLEGUIDE.md](STYLEGUIDE.md).
 
 One owner, one AI assistant, and a written agreement:
 the owner decides, the assistant advises and drafts, and nothing is built
-until it is written down and approved. Every decision, D-001 through D-054,
+until it is written down and approved. Every decision, D-001 through D-107,
 is logged in [DECISIONS.md](DECISIONS.md) with its why, its alternatives and
 who decided. Open questions stay visible until answered. The agreement itself
 is [AGREEMENT.md](AGREEMENT.md). The repository lives at
