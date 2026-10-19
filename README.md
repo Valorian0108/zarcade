@@ -50,7 +50,7 @@ Exactly one route can move money, and both paying machines share it:
 ignored. Three guards run before the wallet is touched: a global pause, a
 per-visitor hourly share, and a daily ceiling for the whole arcade.
 
-112 tests pin the money rules down. I ran the suite myself before committing
+119 tests pin the money rules down. I ran the suite myself before committing
 this file.
 
 Everything else - fees, build time, confirmation wait - is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.

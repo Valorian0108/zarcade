@@ -47,6 +47,7 @@ export function GameFrame({
   showLeakMeter = true,
   receipts = [],
   record,
+  recordLabel = "The running record",
   caption,
   children,
 }: {
@@ -68,6 +69,9 @@ export function GameFrame({
   /** What just happened on this turn, shown as it grows (the running record
      is static no longer: each answer lights up a line during the questions). */
   record?: { label: string; note: string }[];
+  /** The right panel's name. The Proof Puzzle calls it "The Safe" when the
+     safe is the one speaking (D-108); every other machine keeps the default. */
+  recordLabel?: string;
   /** The teaching prose, below the stage (D-046). Two short paragraphs max. */
   caption?: ReactNode;
   children: ReactNode;
@@ -113,8 +117,8 @@ export function GameFrame({
           <Watcher mood={watcherMood} />
         </div>
 
-        <section className="gm-panel gm-publicPanel" aria-label="The running record">
-          <p className="gm-eyebrow">The running record</p>
+        <section className="gm-panel gm-publicPanel" aria-label={recordLabel}>
+          <p className="gm-eyebrow">{recordLabel}</p>
           <p className="gm-recordText">{description}</p>
 
           {receipts.map((receipt) => (

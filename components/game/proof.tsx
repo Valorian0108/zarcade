@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { GameFrame } from "@/components/game/frame";
 import type { WatcherMood } from "@/components/watcher";
+import { PROOF_RECORD_LABEL, proofRecord, type ProofQuestion } from "@/lib/proof";
 
 /**
  * The Proof Puzzle (cabinet three), restaged after the owner's playtest
@@ -20,7 +21,10 @@ import type { WatcherMood } from "@/components/watcher";
  *      2026-10-17: who checks, if nobody knows the code? The safe does,
  *      because the code lives in the safe. On the live chain the same
  *      shape is carried by math built from the secret, named in one line
- *      on the receipt and left parked there).
+ *      on the receipt and left parked there). The record panel is named The
+ *      Safe (D-108), and it prints the safe's own reply about the match, never
+ *      the button the player pressed. A right No reads open; a wrong Yes reads
+ *      shut.
  *   3. Three matching answers open the safe and the house makes one REAL
  *      shielded payment of 1,000 zatoshis through the single money route
  *      (D-103), sending the same one word Unseen sends. The zero-knowledge
@@ -36,7 +40,7 @@ import type { WatcherMood } from "@/components/watcher";
 
 type Step = "setup" | "ask" | "end";
 
-type Question = { text: string; answer: boolean };
+type Question = ProofQuestion;
 
 /**
  * The state of the real payment (D-103). It is never part of the puzzle:
@@ -375,7 +379,7 @@ export function Proof() {
     if (step === "setup") {
       return {
         chip: ["Code", "Your secret code"],
-        panelLabel: "The safe",
+        panelLabel: "Your code",
         caption: (
           <p>
             Pick a secret three-digit code. It goes into the safe. The Watcher closes
@@ -402,7 +406,7 @@ export function Proof() {
     }
     return {
       chip: ["Done", "The verdict"],
-      panelLabel: "The safe",
+      panelLabel: "The result",
       caption: (
         <p>
           The safe opens only if every answer matched your secret code. Below sits what
@@ -418,13 +422,7 @@ export function Proof() {
 
   const s = meta();
 
-  const record =
-    step === "ask" && questions
-      ? questions.map((q, i) => ({
-          label: q.text,
-          note: answers[i] === undefined ? "—" : answers[i] ? "open" : "shut",
-        }))
-      : [];
+  const record = step === "ask" && questions ? proofRecord(questions, answers) : [];
 
   return (
     <GameFrame
@@ -436,6 +434,7 @@ export function Proof() {
       leak={0}
       leakLabel={s.leakLabel}
       description={s.description}
+      recordLabel={PROOF_RECORD_LABEL}
       showLeakMeter={false}
       record={record}
       caption={s.caption}
