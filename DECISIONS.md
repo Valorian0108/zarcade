@@ -1,8 +1,7 @@
 # DECISIONS — the accountability log
 
 > **Status:** ONGOING. Every material decision is recorded here with the *why*,
-> the alternatives considered, and **who decided** (the owner). This is the
-> trail that keeps the project accountable and defensible to judges.
+> the alternatives considered, and **who decided** (the owner).
 
 ## Decision log
 
