@@ -1,19 +1,21 @@
 # Zarcade
 
 Zarcade is an arcade that teaches Zcash privacy. Every machine is a small game
-that moves real practice money on the Zcash test network. Built for the
-Zecathon, Track 05 Wildcard.
+built on real practice money on the Zcash test network and a real public
+record. Built for the Zecathon, Track 05 Wildcard.
 
-## The ask
+## The arcade
 
-You are asked to send a small payment. You pick: hide it, or send it in the
-open. Then you see exactly what a stranger can see afterwards. You install
-nothing and hold no keys.
+Each machine asks you to do one thing with real testnet money or a real public
+record. Hide a payment or leave it open. Read the public record and see what a
+stranger can learn. Prove you know a secret without saying it. Every game
+teaches one way Zcash keeps payments private. You install nothing and hold no
+keys.
 
 ## Proof it is real
 
-Every round broadcasts a real transaction to the Zcash testnet. Two early
-ones, both mined on 2026-10-11:
+Every machine that moves money broadcasts a real transaction to the Zcash
+testnet. Two early Unseen rounds, both mined on 2026-10-11:
 
 - Hidden: [`952a1959…f3299c77`](https://testnet.zecblock.com/tx/952a1959f26c0f405e52de225239cb51bc0bb0696357f669d7449480f3299c77)
   in block 4,488,884. The explorer labels it a fully private Ironwood pool
@@ -22,7 +24,7 @@ ones, both mined on 2026-10-11:
   in block 4,488,905. The explorer gives it a privacy score of 0 out of 100
   and names the amount and the recipient.[^1]
 
-## Hide versus open, side by side
+## Unseen: hide versus open, side by side
 
 | | Hidden | Open |
 | --- | --- | --- |
@@ -42,14 +44,14 @@ and its send endpoint carries three locks of its own (D-094): a service
 token, the game's exact payment policy (the house's own two addresses, the
 fixed round amount, nothing else), and a daily budget that survives restarts.
 
-Exactly one route can move money: `POST /api/game/unseen/send`. It accepts
-`{"choice": "hide"}` or `{"choice": "open"}` and nothing else. Unexpected
-fields are refused, not ignored. Three guards run before the wallet is
-touched: a global pause, a per-visitor hourly share, and a daily ceiling for
-the whole arcade.
+Exactly one route can move money, and both paying machines share it:
+`POST /api/game/unseen/send`. It accepts `{"choice": "hide"}` or
+`{"choice": "open"}` and nothing else. Unexpected fields are refused, not
+ignored. Three guards run before the wallet is touched: a global pause, a
+per-visitor hourly share, and a daily ceiling for the whole arcade.
 
-
-- 112 tests pin the money rules down. I ran the suite myself before committing this file.
+112 tests pin the money rules down. I ran the suite myself before committing
+this file.
 
 Everything else - fees, build time, confirmation wait - is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.
 
@@ -159,9 +161,10 @@ Coming soon:
 ## Limits
 
 - Testnet only. No real money, ever.
-- Three machines are live: Unseen, The Crowd and The Proof Puzzle. Three
-  cabinets are dark and the floor says so: The Double-Spend Heist, The
-  Auditor's Key and The Vault Run.
+- Three machines are live: Unseen, The Crowd and The Proof Puzzle. The floor
+  shows only those. The other cabinets are logged in
+  [DECISIONS.md](DECISIONS.md) and [ROADMAP.md](ROADMAP.md) as features to
+  add.
 - One confirmation cannot be skipped, so round pacing depends on the chain.
 - The first sync is slow and the pot split is slower. Both are stated costs,
   not surprises.
@@ -181,7 +184,7 @@ github.com/Valorian0108/zarcade.
 ## Repo map
 
 ```
-app/           the site: door (/), floor (/arcade), machine (/games/unseen), API routes
+app/           the site: door (/), floor (/arcade), a machine (/games/<id>), API routes
 components/    the game frame, the Watcher, the door and floor, the motion question
 lib/games.ts   the cabinet list, single source of truth
 lib/zcash/     the bridge from the site to the sidecar
