@@ -141,6 +141,21 @@ the public record. Every entrance asks "Motion: more or less?" and remembers
 the answer. Type: Syne for display, Space Grotesk for prose, Geist Mono for
 chain data. The full system is written down in [STYLEGUIDE.md](STYLEGUIDE.md).
 
+## Games
+
+Each machine teaches one way Zcash keeps payments private. How every game
+works is written down in [GAMES.md](GAMES.md).
+
+Playable now:
+- Unseen
+- The Crowd
+- The Proof Puzzle
+
+Coming soon:
+- The Double-Spend Heist
+- The Auditor's Key
+- The Vault Run
+
 ## Limits
 
 - Testnet only. No real money, ever.
