@@ -166,20 +166,24 @@ export function buildBook(live: readonly LiveRow[]): readonly CrowdRecord[] {
   used.add(open.txid);
   rows.push(open);
 
-  const sealedCount = () => rows.filter((r) => r.kind === "shielded").length;
+  // A plain counter, not a re-scan of `rows` per step (D-109): same result,
+  // one honest tally instead of repeated filtering.
+  let sealedCount = 0;
   for (const r of usable) {
-    if (sealedCount() >= 2) break;
+    if (sealedCount >= 2) break;
     if (r.kind !== "shielded" || used.has(r.txid)) continue;
     used.add(r.txid);
     rows.push(r);
+    sealedCount++;
   }
   for (const r of curatedSealed) {
-    if (sealedCount() >= 2) break;
+    if (sealedCount >= 2) break;
     if (used.has(r.txid)) continue;
     used.add(r.txid);
     rows.push(r);
+    sealedCount++;
   }
-  if (sealedCount() < 2) return CROWD_RECORDS;
+  if (sealedCount < 2) return CROWD_RECORDS;
   return rows;
 }
 
