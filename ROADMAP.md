@@ -599,8 +599,17 @@
     Owner verdict on first full play: "this is dope, keep her"
     (2026-10-13).
   - Cabinet three: The Proof Puzzle. Shipped as the Watcher's Safe (D-103 through D-107): you prove you know a three-digit code without saying it, the safe checks three yes-or-no questions, and a real shielded payment of one thousand zatoshis moves on testnet when all three match. The story names who pays (the arcade), the payment moves only when all three answers match, and the cabinet head is the key and the lock — not the Watcher (D-078). The hub's Watcher ducks out of sight instead (D-107). No longer proposed; no Schnorr endpoint.
-  - Cabinet four: The Paper Trail. Transparent versus shielded contrast,
-    cheap on the existing rails.
+  - Cabinet four: undecided. The Paper Trail was considered and
+    discarded by the owner on 2026-10-25 (D-112): its transparent
+    versus shielded contrast repeats Unseen's hide versus open lesson,
+    and a cabinet that teaches nothing new is not worth a build. The
+    remaining candidates, each still unscoped: The Auditor's Key
+    (viewing keys, needs shielded viewing-key work in Rust), The
+    Double-Spend Heist (nullifiers, stageable only as an honest model),
+    The Vault Run (pool crossings, needs wallet work), The Sealed
+    Letter (memos, blocked by the D-025 memo guardrail), One Mailbox
+    (unified addresses, optional), Jar vs. Seal (why Zcash is not a
+    mixer, optional).
   - Not scheduled: Auditor's Key and Vault Run (new Rust wallet work),
     The Sealed Letter (conflicts with the D-025 memo guardrail),
     Double-Spend Heist (cannot be staged honestly).
