@@ -74,4 +74,17 @@ describe("the hub list", () => {
     const glosses = glossParts(proof?.teaches ?? "").filter((p) => p.gloss);
     expect(glosses.map((p) => p.text)).toEqual(["zero-knowledge proof"]);
   });
+
+  it("lights cabinet four as The Merchant's Window with its own head image", () => {
+    // Owner's approval 2026-10-26: the name is locked and the hub
+    // registration is a yes. Same rule as cabinet three: the Watcher never
+    // heads this cabinet. The key and the lock are its own piece.
+    const merchant = GAMES.find((g) => g.id === "merchant");
+    expect(merchant?.status).toBe("playable");
+    expect(merchant?.href).toBe("/games/merchant");
+    expect(merchant?.cast).toBe("keylock");
+    expect(merchant?.name).toBe("The Merchant's Window");
+    const glosses = glossParts(merchant?.teaches ?? "").filter((p) => p.gloss);
+    expect(glosses.map((p) => p.text)).toEqual(["viewing key"]);
+  });
 });

@@ -567,19 +567,6 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
   animation: none;
 }
 
-.gm-wRim {
-  opacity: 0.7;
-  transition: opacity 0.7s ease;
-}
-
-.gm-watcher[data-mood="alert"] .gm-wRim {
-  opacity: 1;
-}
-
-.gm-watcher[data-mood="blind"] .gm-wRim {
-  opacity: 0.15;
-}
-
 .gm-wEye {
   transform-box: fill-box;
   transform-origin: center;
@@ -630,10 +617,6 @@ html[data-pref="more"] .gm-motionBtn[data-opt="more"] {
 .gm-watcher[data-mood="hide"] .gm-wGlow {
   opacity: 0.15;
   animation: none;
-}
-
-.gm-watcher[data-mood="hide"] .gm-wRim {
-  opacity: 0.12;
 }
 
 .gm-watcher[data-mood="hide"] .gm-wEye {

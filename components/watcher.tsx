@@ -69,9 +69,10 @@ export function Watcher({
             <stop offset="45%" stopColor="#edb64a" stopOpacity="0.18" />
             <stop offset="100%" stopColor="#edb64a" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="gmCloak" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2b2438" />
-            <stop offset="100%" stopColor="#1c1728" />
+          <linearGradient id="gmCloak" x1="0.1" y1="0" x2="0.9" y2="1">
+            <stop offset="0%" stopColor="#241e31" />
+            <stop offset="55%" stopColor="#2b2438" />
+            <stop offset="100%" stopColor="#3a3145" />
           </linearGradient>
           <radialGradient id="gmIris" cx="42%" cy="38%" r="70%">
             <stop offset="0%" stopColor="#ffe3a3" />
@@ -85,21 +86,15 @@ export function Watcher({
         <g className="gm-wFloat">
           <circle className="gm-wGlow" cx="169" cy="166" r="52" fill="url(#gmGlow)" />
 
-          {/* cloak */}
+          {/* cloak: lit by its own lantern from the arm side, a soft diagonal
+              warmth in the hues the figure already wears. The painted rim
+              stripe that used to sit here read as a drawn-on line (the same
+              defect the owner caught on the auditor), so the gradient alone
+              carries the light now. */}
           <path
             d="M100 26c-34 0-52 26-55 62-3 34-9 74-16 108-2 9 4 16 13 17 19 3 39 4 58 4s39-1 58-4c9-1 15-8 13-17-7-34-13-74-16-108-3-36-21-62-55-62Z"
             fill="url(#gmCloak)"
             stroke="rgba(255,255,255,0.07)"
-          />
-          {/* rim light from its own lantern, on the side facing the record */}
-          <path
-            className="gm-wRim"
-            d="M148 52c10 18 12 46 8 78-3 26-8 54-13 78"
-            fill="none"
-            stroke="#edb64a"
-            strokeOpacity="0.35"
-            strokeWidth="2.5"
-            strokeLinecap="round"
           />
 
           {/* hood void + single gold eye */}

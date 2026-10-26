@@ -389,3 +389,200 @@ export async function readSendHistory(limit = 8): Promise<LedgerRow[]> {
   }
   return rows;
 }
+
+/**
+ * Cabinet four's window (SCOPE-CABINET-4.md 2.2 and 2.3).
+ *
+ * Read-only, and read-only all the way down. The wallet helper answers this
+ * from notes the merchant account's incoming viewing key decrypted, so the
+ * reply cannot contain a spending key, a full viewing key, a balance or a
+ * sender: the key that produced it does not know those things.
+ *
+ * Notice what is NOT here. There is no parameter for an address, an amount or
+ * an account, so there is nothing for a caller to aim. The window shows the
+ * merchant's own incoming side or it shows nothing.
+ */
+type MerchantRowBody = {
+  txid?: string;
+  pool?: string;
+  output_index?: number;
+  zatoshis?: number;
+  address?: string;
+  memo?: string | null;
+  block?: number;
+  block_time?: number;
+};
+
+type MerchantBody = {
+  ok?: boolean;
+  network?: string;
+  merchant?: {
+    address?: string;
+    /** A label naming which key was used, never the key itself. */
+    key_used?: string;
+    can_spend?: boolean;
+    scanned_from?: number;
+    scanned_to?: number;
+    blocks_scanned?: number;
+    rows?: MerchantRowBody[];
+  };
+};
+
+/** One payment the merchant received, exactly as the incoming-only scan read it. */
+export type MerchantReceipt = {
+  txid: string;
+  pool: string;
+  outputIndex: number;
+  zatoshis: number;
+  /** Null when the payment carried no text note. Never guessed. */
+  memo: string | null;
+  block: number;
+  blockTime: number;
+};
+
+export type MerchantWindow = {
+  /** The merchant's own receiving address. Public: a payer has to know it. */
+  address: string;
+  /** Always false, and said out loud rather than implied. Reading is not spending. */
+  canSpend: boolean;
+  /** The block the scan has read up to, so the screen can say how fresh it is. */
+  scannedTo: number;
+  receipts: MerchantReceipt[];
+};
+
+const TXID_SHAPE = /^[0-9a-f]{64}$/i;
+
+/**
+ * The merchant's incoming side, as the chain currently shows it.
+ *
+ * Slow the first time after a restart, because the helper walks blocks from the
+ * account's birthday to the chain tip; after that it only reads new blocks.
+ * Malformed rows are dropped rather than trusted, and an empty list is a real
+ * answer: it means no payment has landed yet, which the cabinet says plainly
+ * instead of inventing a receipt.
+ */
+export async function readMerchantWindow(): Promise<MerchantWindow> {
+  const body = await call<MerchantBody>(
+    "/merchant",
+    undefined,
+    READ_TIMEOUT_MS * 6,
+    "read the merchant's incoming payments",
+  );
+  const scan = body.merchant;
+  if (!scan || typeof scan.address !== "string" || scan.address === "") {
+    throw new SidecarError(502, "The wallet has no merchant account to look through yet.");
+  }
+  const receipts: MerchantReceipt[] = [];
+  for (const row of scan.rows ?? []) {
+    if (typeof row.txid !== "string" || !TXID_SHAPE.test(row.txid)) continue;
+    if (!Number.isFinite(row.zatoshis) || !Number.isFinite(row.block)) continue;
+    receipts.push({
+      txid: row.txid,
+      pool: typeof row.pool === "string" ? row.pool : "ironwood",
+      outputIndex: Number.isFinite(row.output_index) ? (row.output_index as number) : 0,
+      zatoshis: row.zatoshis as number,
+      memo: typeof row.memo === "string" && row.memo !== "" ? row.memo : null,
+      block: row.block as number,
+      blockTime: Number.isFinite(row.block_time) ? (row.block_time as number) : 0,
+    });
+  }
+  return {
+    address: scan.address,
+    // Anything other than an explicit false would be a claim the key cannot keep.
+    canSpend: scan.can_spend === true,
+    scannedTo: Number.isFinite(scan.scanned_to) ? (scan.scanned_to as number) : 0,
+    receipts,
+  };
+}
+
+/**
+ * The result of proving one of those receipts against the chain
+ * (SCOPE-CABINET-4.md 2.4).
+ *
+ * This is the payload the shipped cabinet is allowed to see. It carries the
+ * verdict and facts that are already public or already the merchant's own to
+ * show. It has no field for the note's randomness, diversifier or recipient
+ * bytes, and the helper checks that before it answers: two of the five checks
+ * exist only to prove the plaintext stayed behind.
+ */
+type VerifyBody = {
+  ok?: boolean;
+  verification?: {
+    txid?: string;
+    pool?: string;
+    output_index?: number;
+    zatoshis?: number;
+    memo?: string | null;
+    claimed_height?: number;
+    network_height?: number | null;
+    onchain_commitment?: string;
+    checks?: Array<{ name?: string; passed?: boolean; detail?: string }>;
+    verified?: boolean;
+  };
+};
+
+export type ReceiptCheck = { name: string; passed: boolean; detail: string };
+
+export type ReceiptProof = {
+  txid: string;
+  outputIndex: number;
+  zatoshis: number;
+  memo: string | null;
+  /** The block the scan recorded the receipt in. */
+  claimedBlock: number;
+  /** The block the network reports right now, or null if it reports none. */
+  networkBlock: number | null;
+  /** The commitment the chain carries for this output. Public by design. */
+  commitment: string;
+  checks: ReceiptCheck[];
+  verified: boolean;
+};
+
+/**
+ * Proves one receipt the merchant's window already holds.
+ *
+ * The two arguments are not a caller's free choice: the sidecar refuses any
+ * transaction its incoming-only scan did not decrypt for the merchant's own
+ * address, so this cannot be aimed at somebody else's payment. Both values come
+ * from a row this bridge already read.
+ *
+ * A `verified: false` answer is passed through, not thrown. Whether a proof
+ * failed is itself the fact the cabinet has to report honestly.
+ */
+export async function verifyReceipt(txid: string, outputIndex: number): Promise<ReceiptProof> {
+  const body = await call<VerifyBody>(
+    `/merchant/verify?txid=${encodeURIComponent(txid)}&output=${encodeURIComponent(String(outputIndex))}`,
+    undefined,
+    READ_TIMEOUT_MS * 6,
+    "prove the receipt against the chain",
+  );
+  const v = body.verification;
+  if (!v || typeof v.txid !== "string") {
+    throw new SidecarError(502, "The wallet answered the proof request with nothing readable.");
+  }
+  const checks: ReceiptCheck[] = [];
+  for (const check of v.checks ?? []) {
+    if (typeof check.name !== "string") continue;
+    checks.push({
+      name: check.name,
+      passed: check.passed === true,
+      detail: typeof check.detail === "string" ? check.detail : "",
+    });
+  }
+  return {
+    txid: v.txid,
+    outputIndex: Number.isFinite(v.output_index) ? (v.output_index as number) : outputIndex,
+    zatoshis: Number.isFinite(v.zatoshis) ? (v.zatoshis as number) : 0,
+    memo: typeof v.memo === "string" && v.memo !== "" ? v.memo : null,
+    claimedBlock: Number.isFinite(v.claimed_height) ? (v.claimed_height as number) : 0,
+    networkBlock:
+      typeof v.network_height === "number" && Number.isFinite(v.network_height)
+        ? v.network_height
+        : null,
+    commitment: typeof v.onchain_commitment === "string" ? v.onchain_commitment : "",
+    checks,
+    // Only true when the wallet said so AND every individual check passed, so a
+    // future check added server-side cannot be skipped by a stale summary flag.
+    verified: v.verified === true && checks.length > 0 && checks.every((c) => c.passed),
+  };
+}

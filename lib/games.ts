@@ -84,18 +84,31 @@ export const GAMES: GameEntry[] = [
       "A safe with your secret code, three yes-or-no questions, and a receipt that shows only that a payment happened.",
   },
   {
+    // Cabinet four, lit after the owner locked the name and approved the hub
+    // registration (2026-10-26). Planned since the roadmap as The Auditor's
+    // Key; built and shipped as The Merchant's Window. Same head rule as
+    // cabinet three: the Watcher never heads it, the key and lock are its
+    // own piece.
+    id: "merchant",
+    name: "The Merchant's Window",
+    teach: "Choose how much of your record proves a payment landed.",
+    status: "playable",
+    href: "/games/merchant",
+    glyph: "auditor",
+    cast: "keylock",
+    about:
+      "Night has fallen on a small shop. A customer paid a deposit for a custom order, and the supplier will not release the materials until someone sees the money really landed. His auditor stands at your counter with a written ask, and only your key can show the payment. The rows you will read are real testnet payments, pulled live from the chain.",
+    teaches:
+      "Your key is a {{viewing key}}. It reads only the money arriving at one account: the amount, your address, the payer's message, the time and the block. It never names who paid, it never shows money leaving, and it can never spend a coin. Reading and spending are two separate secrets. One payment can also be proved on its own, without handing over the key that reads the whole account.",
+    sees:
+      "A counter under one lamp, a record board of real payments, a till with a keyhole, a brass key, the auditor holding a folded letter, and a dark window on the far wall.",
+  },
+  {
     id: "doublespend",
     name: "The Double-Spend Heist",
     teach: "Catch a cheater spending the same coin twice.",
     status: "soon",
     glyph: "doublespend",
-  },
-  {
-    id: "auditor",
-    name: "The Auditor's Key",
-    teach: "Give a trusted person a key to look at your payments. Looking is not spending.",
-    status: "soon",
-    glyph: "auditor",
   },
   {
     id: "vault",
