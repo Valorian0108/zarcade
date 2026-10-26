@@ -29,6 +29,13 @@
   --raised: #221d2e;
   --shadow-side: #a89fc4;
 
+  /* Oxblood velvet (D-114, owner 2026-10-25: "the ox blood is perfect, add it
+     to zarcade colors"). The curtain cloth of The Auditor's Key (D-113),
+     offered to any future cabinet that needs a warm dark red. */
+  --oxblood-hi: #5a2130;
+  --oxblood-mid: #3d1522;
+  --oxblood-lo: #230b13;
+
   min-height: 100vh;
   padding-bottom: 72px;
   color: var(--body);

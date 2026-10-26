@@ -8,7 +8,7 @@
 //!
 //!  1. A service token (when armed): `/send` answers only a caller that knows
 //!     `ZARCADE_SEND_TOKEN`.
-//!  2. The game's policy: a payment can only go to one of the house's own two
+//!  2. The game's policy: a payment can only go to one of the arcade's own
 //!     addresses, and only in the exact fixed round amount. Money cannot be
 //!     aimed at a stranger's address through this door at all.
 //!  3. A daily budget that lives on disk, so a restart cannot clear it. The
@@ -51,18 +51,26 @@ impl std::fmt::Display for PolicyError {
     }
 }
 
-/// The game's policy at the wallet boundary: the exact round amount, and one
-/// of the house's two own addresses, or nothing.
+/// The game's policy at the wallet boundary: the exact round amount, and one of
+/// the arcade's own addresses, or nothing.
+///
+/// The third address is cabinet four's merchant account (SCOPE-CABINET-4.md
+/// 2.1). It lives in this same sidecar and comes from this same seed, so paying
+/// it is still the house paying itself: no player-supplied destination exists
+/// here, and the amount is still the one fixed round amount. An empty
+/// destination never matches, even if an address file were ever empty.
 pub fn check_send(
     to: &str,
     zatoshis: u64,
     own_shielded: &str,
     own_transparent: &str,
+    own_merchant: &str,
 ) -> Result<(), PolicyError> {
     if zatoshis != GAME_SEND_ZATOSHIS {
         return Err(PolicyError::BadAmount);
     }
-    if to != own_shielded && to != own_transparent {
+    let allowed = [own_shielded, own_transparent, own_merchant];
+    if to.is_empty() || !allowed.iter().any(|own| *own == to) {
         return Err(PolicyError::BadDestination);
     }
     Ok(())
@@ -170,6 +178,7 @@ mod tests {
 
     const SHIELDED: &str = "ztestsapling1house";
     const TRANSPARENT: &str = "tmHouseOpen";
+    const MERCHANT: &str = "u1merchantWindow";
 
     fn temp_dir(tag: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("zarcade-budget-{tag}-{}", std::process::id()));
@@ -179,9 +188,18 @@ mod tests {
     }
 
     #[test]
-    fn policy_allows_the_two_game_payments() {
-        assert!(check_send(SHIELDED, GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT).is_ok());
-        assert!(check_send(TRANSPARENT, GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT).is_ok());
+    fn policy_allows_the_three_own_addresses() {
+        // The two cabinet-one destinations, plus cabinet four's merchant account
+        // (SCOPE-CABINET-4.md 2.1). All three belong to this one sidecar.
+        assert!(
+            check_send(SHIELDED, GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT, MERCHANT).is_ok()
+        );
+        assert!(
+            check_send(TRANSPARENT, GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT, MERCHANT).is_ok()
+        );
+        assert!(
+            check_send(MERCHANT, GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT, MERCHANT).is_ok()
+        );
     }
 
     #[test]
@@ -189,11 +207,22 @@ mod tests {
         // The review's P0, closed at the door that moves money: even with the
         // right amount, a stranger's address never passes.
         assert_eq!(
-            check_send("tStrangerAddr", GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT),
+            check_send(
+                "tStrangerAddr",
+                GAME_SEND_ZATOSHIS,
+                SHIELDED,
+                TRANSPARENT,
+                MERCHANT
+            ),
             Err(PolicyError::BadDestination)
         );
         assert_eq!(
-            check_send("", GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT),
+            check_send("", GAME_SEND_ZATOSHIS, SHIELDED, TRANSPARENT, MERCHANT),
+            Err(PolicyError::BadDestination)
+        );
+        // An empty own-address must never turn an empty destination into a match.
+        assert_eq!(
+            check_send("", GAME_SEND_ZATOSHIS, SHIELDED, "", ""),
             Err(PolicyError::BadDestination)
         );
     }
@@ -202,7 +231,7 @@ mod tests {
     fn policy_refuses_any_other_amount() {
         for amount in [0u64, 1, 999, 1_001, 100_000] {
             assert_eq!(
-                check_send(SHIELDED, amount, SHIELDED, TRANSPARENT),
+                check_send(SHIELDED, amount, SHIELDED, TRANSPARENT, MERCHANT),
                 Err(PolicyError::BadAmount),
                 "amount {amount} must be refused"
             );

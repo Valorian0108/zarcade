@@ -14,8 +14,14 @@
 //!   not rotate across restarts (faucet payouts must keep working).
 
 use std::num::NonZeroU32;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+use orchard::{
+    keys::{Diversifier, PreparedIncomingViewingKey},
+    note::{ExtractedNoteCommitment, Note as OrchardNote, NoteVersion as OrchardNoteVersion, Nullifier as OrchardNullifier, RandomSeed, Rho},
+    note_encryption::{CompactAction, IronwoodDomain},
+    value::NoteValue,
+};
 use rand::rngs::SysRng;
 use rand_core::{Rng as _, UnwrapErr};
 use secrecy::Secret;
@@ -29,11 +35,14 @@ use zcash_client_backend::{
             propose_standard_transfer_to_address, propose_transfer, ConfirmationsPolicy,
             SpendingKeys,
         },
-        AccountBirthday, InputSource, WalletRead, WalletWrite,
+        Account as _, AccountBirthday, InputSource, WalletRead, WalletWrite,
     },
     fees::{standard::SingleOutputChangeStrategy, DustOutputPolicy, StandardFeeRule},
     proposal::Proposal,
-    proto::service::{self, compact_tx_streamer_client::CompactTxStreamerClient},
+    proto::{
+        compact_formats::CompactOrchardAction,
+        service::{self, compact_tx_streamer_client::CompactTxStreamerClient},
+    },
     sync,
     wallet::OvkPolicy,
 };
@@ -42,13 +51,21 @@ use zcash_client_sqlite::{
 };
 use zcash_keys::{
     address::Address,
-    keys::{UnifiedAddressRequest, UnifiedSpendingKey},
+    keys::{UnifiedAddressRequest, UnifiedIncomingViewingKey, UnifiedSpendingKey},
 };
-use zcash_primitives::{block::BlockHash, transaction::fees::FeeRule};
+// The cabinet-four merchant scan trial-decrypts notes with an incoming viewing
+// key only (SCOPE-CABINET-4.md 2.2), which is exactly these two functions.
+use zcash_note_encryption::{
+    try_compact_note_decryption, try_note_decryption, EphemeralKeyBytes,
+};
+use zcash_primitives::{
+    block::BlockHash,
+    transaction::{fees::FeeRule, Transaction},
+};
 use zcash_proofs::prover::LocalTxProver;
 use zcash_transparent::keys::IncomingViewingKey;
 use zcash_protocol::{
-    consensus::{BlockHeight, Network},
+    consensus::{BlockHeight, BranchId, Network},
     memo::{Memo, MemoBytes},
     value::Zatoshis,
     ShieldedPool, TxId,
@@ -110,6 +127,35 @@ pub const MIN_SPLIT_NOTE_ZATOSHIS: u64 = MARGINAL_FEE_ZATOSHIS + 1;
 /// 5,000 * (N + 1) zatoshis in fee on top of the notes themselves. 200 keeps
 /// the worst case near 1,000,000 zatoshis, under one faucet claim.
 pub const MAX_SPLIT_NOTES: usize = 200;
+
+/// The two account names this sidecar keeps in its one wallet database.
+///
+/// Cabinet four (SCOPE-CABINET-4.md 2.1) added the merchant. Names, not
+/// positions, decide which account is which: the house holds the pot and the
+/// only spending key this sidecar ever derives, while the merchant is the shop
+/// in the story and is read with its incoming viewing key alone.
+pub const HOUSE_ACCOUNT_NAME: &str = "house";
+pub const MERCHANT_ACCOUNT_NAME: &str = "merchant";
+
+/// Finds an account by the name it was created with.
+///
+/// `WalletDb` hands back account ids in database order, which is not a promise
+/// about which account is which, so every lookup in this file goes through the
+/// name instead of taking the first id it is given.
+fn find_account_by_name(wallet: &Wallet, name: &str) -> Result<Option<AccountUuid>, String> {
+    for id in wallet
+        .get_account_ids()
+        .map_err(|e| format!("cannot read accounts: {e}"))?
+    {
+        let account = wallet
+            .get_account(id)
+            .map_err(|e| format!("cannot read one of the wallet's accounts: {e}"))?;
+        if account.as_ref().and_then(|a| a.name()) == Some(name) {
+            return Ok(Some(id));
+        }
+    }
+    Ok(None)
+}
 
 /// Resolves the lightwalletd endpoint at runtime. ZARCADE_LIGHTWALLETD_URL
 /// and ZARCADE_LIGHTWALLETD_HOST override the built-in default, which lets us
@@ -250,8 +296,129 @@ impl std::fmt::Display for SendError {
     }
 }
 
+/// One check in the single-payment disclosure gate (SCOPE-CABINET-4.md §3).
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct DisclosureCheck {
+    pub name: String,
+    pub passed: bool,
+    pub detail: String,
+}
+
+/// The gate's exported disclosure and its verification result.
+///
+/// This payload includes the note's randomness, so it is the most sensitive
+/// thing the sidecar can produce. It exists only for the gate and is served
+/// only when the process is started with ZARCADE_GATE=1. The shipped cabinet
+/// will ask the verifier for a result and will never receive this struct.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct DisclosureReport {
+    pub note_id: i64,
+    pub txid: String,
+    pub pool: String,
+    pub output_index: u32,
+    pub claimed_height: u32,
+    pub network_height: Option<u32>,
+    pub value_zat: u64,
+    pub note_version: u8,
+    pub diversifier: String,
+    pub rho: String,
+    pub rseed: String,
+    /// The note's own Orchard address, 43 bytes hex. This is what the verifier
+    /// feeds back into the commitment, not a viewing key.
+    pub recipient: String,
+    /// The merchant's window handles payments received at the account's
+    /// address, which are external scope. Change notes at internal addresses
+    /// are outside this receipt path.
+    pub recipient_scope: String,
+    pub memo_hex: Option<String>,
+    pub memo_text: Option<String>,
+    pub note_commitment: String,
+    pub onchain_commitment: String,
+    /// Out of scope for the receipt proof, but shown so nobody mistakes a
+    /// spent note for an unspent one.
+    pub spent: bool,
+    pub checks: Vec<DisclosureCheck>,
+    pub verified: bool,
+}
+
+/// The wallet stores an empty memo as the single byte 0xf6 and a real memo as
+/// the full 512-byte ZIP 302 encoding. Decode only a genuine text memo;
+/// anything else stays hex, so this cannot invent a message that was not on
+/// chain.
+fn disclosure_memo(memo: Option<&[u8]>) -> (Option<String>, Option<String>) {
+    let Some(bytes) = memo else {
+        return (None, None);
+    };
+    if bytes == [0xf6] {
+        return (None, None);
+    }
+    let hex_text = hex::encode(bytes);
+    let text = if bytes.len() == 512 {
+        Memo::from_bytes(bytes).ok().and_then(|memo| match memo {
+            Memo::Text(text) => Some(String::from(text)),
+            _ => None,
+        })
+    } else {
+        None
+    };
+    (Some(hex_text), text)
+}
+
+/// One payment the merchant received, as the incoming-only scan read it.
+///
+/// Every field here comes out of a note that the merchant's incoming viewing
+/// key decrypted. Nothing is inferred, nothing is filled in from the sender's
+/// side, and there is deliberately no field for who paid: a receiving-side key
+/// does not name the payer (SCOPE-CABINET-4.md 2.2).
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MerchantRow {
+    pub txid: String,
+    pub pool: String,
+    pub output_index: u32,
+    pub zatoshis: u64,
+    /// The merchant's own address that was paid.
+    pub address: String,
+    /// The memo the payment carried, when it carried one. `None` means the note
+    /// had no text memo; it is never guessed.
+    pub memo: Option<String>,
+    pub block: u32,
+    /// Block time as the chain reports it, in seconds since the Unix epoch.
+    pub block_time: u32,
+}
+
+/// What one pass of the incoming-only scan reports.
+///
+/// `can_spend` is always false and is stated out loud on purpose: the cabinet's
+/// lesson is that reading and spending are separate secrets, so the response
+/// carries that fact instead of leaving it implied.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct MerchantScan {
+    pub address: String,
+    pub key_used: String,
+    pub can_spend: bool,
+    pub scanned_from: u32,
+    pub scanned_to: u32,
+    pub blocks_scanned: u32,
+    pub rows: Vec<MerchantRow>,
+}
+
+/// The scan's progress and its rows, kept in `data/merchant-scan.json`.
+///
+/// The file is a cache, not a source of truth: every row in it was decrypted
+/// from a real block, and it exists so a second look at the cabinet does not
+/// re-download blocks it has already read.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+struct MerchantScanState {
+    last_height: u32,
+    rows: Vec<MerchantRow>,
+}
+
 pub struct HouseWallet {
     wallet: Wallet,
+    /// The same database's path, kept so the gate can open a second,
+    /// read-only connection. `WalletDb` keeps its connection private, and the
+    /// gate must never be able to write through a hole in the house wallet.
+    db_path: PathBuf,
     cache: MemBlockCache,
     client: CompactTxStreamerClient<tonic::transport::Channel>,
     prover: LocalTxProver,
@@ -263,6 +430,17 @@ pub struct HouseWallet {
     /// self-contained and no third-party or player-supplied address is ever
     /// involved.
     transparent_address: String,
+    /// Cabinet four (SCOPE-CABINET-4.md 2.1): a second account in the same
+    /// wallet, belonging to the merchant in the story. The house pot pays it one
+    /// real deposit; the cabinet then reads that deposit with the merchant's
+    /// incoming viewing key and nothing else. Only what the read needs is kept
+    /// here: the address, that key, and the birthday the scan starts from.
+    merchant_address: String,
+    /// The merchant account's incoming viewing key. It is the only key the
+    /// merchant scan uses, and no route ever returns it.
+    merchant_uivk: UnifiedIncomingViewingKey,
+    merchant_birthday: u32,
+    merchant_scan_path: PathBuf,
 }
 
 impl HouseWallet {
@@ -275,8 +453,9 @@ impl HouseWallet {
         let seed = load_or_create_seed(&data_dir.join("seed.hex"))?;
 
         // 2. Wallet DB (SQLite) with migrations applied.
+        let db_path = data_dir.join("wallet.sqlite");
         let mut wallet = WalletDb::for_path(
-            data_dir.join("wallet.sqlite"),
+            &db_path,
             Network::TestNetwork,
             SystemClock,
             UnwrapErr(SysRng),
@@ -324,12 +503,12 @@ impl HouseWallet {
             .try_into()
             .map_err(|_| "chain tip hash is not 32 bytes".to_string())?;
 
-        // 5. House account: reuse the existing one, or create it.
-        let existing = wallet
-            .get_account_ids()
-            .map_err(|e| format!("cannot read accounts: {e}"))?;
-        let account = match existing.first() {
-            Some(id) => *id,
+        // 5. House account: reuse the existing one, or create it. Accounts are
+        //    found BY NAME and never by position, because cabinet four adds a
+        //    second account to this wallet and "the first one" would be a guess
+        //    that silently points the house's money at the wrong key.
+        let account = match find_account_by_name(&wallet, HOUSE_ACCOUNT_NAME)? {
+            Some(id) => id,
             None => {
                 let birthday_height =
                     read_birthday(&data_dir.join("birthday.txt")).unwrap_or(tip_height);
@@ -352,11 +531,49 @@ impl HouseWallet {
                 };
                 let birthday = AccountBirthday::from_parts(birthday_state, None);
                 let (id, _usk) = wallet
-                    .create_account("house", &Secret::new(seed.clone()), &birthday, None)
+                    .create_account(
+                        HOUSE_ACCOUNT_NAME,
+                        &Secret::new(seed.clone()),
+                        &birthday,
+                        None,
+                    )
                     .map_err(|e| format!("cannot create house account: {e}"))?;
                 id
             }
         };
+
+        // 5b. Merchant account (cabinet four, SCOPE-CABINET-4.md 2.1): the
+        //     account the shop in the story owns. It is created at the chain tip
+        //     because the merchant has no history to discover; it only ever
+        //     receives the one deposit the game pays it. That birthday is also
+        //     what bounds the incoming-only scan, so a fresh merchant never
+        //     re-reads the whole testnet.
+        let merchant = match find_account_by_name(&wallet, MERCHANT_ACCOUNT_NAME)? {
+            Some(id) => id,
+            None => {
+                let birthday_state =
+                    ChainState::empty(BlockHeight::from_u32(tip_height), BlockHash(tip_hash));
+                let birthday = AccountBirthday::from_parts(birthday_state, None);
+                let (id, _usk) = wallet
+                    .create_account(
+                        MERCHANT_ACCOUNT_NAME,
+                        &Secret::new(seed.clone()),
+                        &birthday,
+                        None,
+                    )
+                    .map_err(|e| format!("cannot create merchant account: {e}"))?;
+                println!("created the merchant account with birthday height {tip_height}");
+                id
+            }
+        };
+        let merchant_account = wallet
+            .get_account(merchant)
+            .map_err(|e| format!("cannot read the merchant account: {e}"))?
+            .ok_or_else(|| "the merchant account is missing from the wallet".to_string())?;
+        let merchant_birthday = u32::from(merchant_account.birthday_height());
+        // The incoming viewing key is the ONLY key the merchant scan uses. It is
+        // derived here, held in memory, and never returned by any route.
+        let merchant_uivk = merchant_account.uivk();
 
         // 6. Stable deposit address (generated once, then read from file).
         let address = load_or_create_address(&data_dir.join("address.txt"), &mut wallet, account)?;
@@ -366,12 +583,22 @@ impl HouseWallet {
         let transparent_address =
             load_or_create_transparent_address(&data_dir.join("transparent-address.txt"), &seed)?;
 
+        // 6c. The merchant's stable receiving address, generated once and then
+        //     read from file, exactly like the house deposit address: the cabinet
+        //     shows it to the player, so it must never rotate between restarts.
+        let merchant_address = load_or_create_address(
+            &data_dir.join("merchant-address.txt"),
+            &mut wallet,
+            merchant,
+        )?;
+
         // 7. Prover with the Sapling parameters embedded in the binary.
         //    This parses ~50MB once at startup; sends are then fast.
         let prover = LocalTxProver::bundled();
 
         Ok(Self {
             wallet,
+            db_path,
             cache: MemBlockCache::default(),
             client,
             prover,
@@ -379,6 +606,10 @@ impl HouseWallet {
             seed,
             address,
             transparent_address,
+            merchant_address,
+            merchant_uivk,
+            merchant_birthday,
+            merchant_scan_path: data_dir.join("merchant-scan.json"),
         })
     }
 
@@ -390,6 +621,13 @@ impl HouseWallet {
     /// branch of a game pays to.
     pub fn transparent_address(&self) -> &str {
         &self.transparent_address
+    }
+
+    /// The merchant account's receiving address (cabinet four). The house pays
+    /// the story's deposit here, and the incoming-only scan reads back whatever
+    /// lands at it.
+    pub fn merchant_address(&self) -> &str {
+        &self.merchant_address
     }
 
     /// Height the wallet has scanned up to (0 = never synced).
@@ -414,6 +652,162 @@ impl HouseWallet {
         .await
         .map_err(|e| format!("sync failed: {e:?}"))?;
         self.synced_height()
+    }
+
+    /// Cabinet four (SCOPE-CABINET-4.md 2.2): read the merchant's incoming side
+    /// with the merchant's incoming viewing key and nothing else.
+    ///
+    /// How it works, in plain terms. The scan asks lightwalletd for the compact
+    /// blocks between the merchant's birthday and the chain tip. A compact block
+    /// carries, for every Ironwood action, the note commitment, the ephemeral
+    /// public key, and the first 52 bytes of the note ciphertext. Those 52 bytes
+    /// are enough for a receiving key to try the lock: when the key fits, the
+    /// amount and the receiving address come out; when it does not, the bytes
+    /// stay noise. That is the whole of incoming viewing.
+    ///
+    /// What it deliberately does not do. No nullifier key is derived, so the scan
+    /// cannot tell whether a note was later spent, and no spending key is
+    /// touched. A compact block carries no memo, so a note that opens is fetched
+    /// once in full and decrypted a second time to read the memo that payment
+    /// really carried. If that second read fails, the scan says so instead of
+    /// publishing a row with an invented or silently missing memo.
+    ///
+    /// Progress is cached in `data/merchant-scan.json`, so a second look reads
+    /// only blocks it has not seen yet. Rows already in the cache are never
+    /// rewritten; a row is added only by a successful decryption.
+    pub async fn merchant_scan(&mut self) -> Result<MerchantScan, String> {
+        // `prepare()` returns an owned key, so nothing below holds a borrow of
+        // `self` while the network client is in use.
+        let prepared = {
+            let ivk = self
+                .merchant_uivk
+                .orchard()
+                .as_ref()
+                .ok_or_else(|| {
+                    "the merchant account has no Ironwood incoming viewing key".to_string()
+                })?;
+            ivk.prepare()
+        };
+        // The one receiver this scan may label a row with. A note that opens for
+        // any other address is an error, not a row: the cabinet must never show a
+        // receipt it cannot account for.
+        let merchant_receiver = merchant_address_receiver(&self.merchant_address)?;
+        let mut client = self.client.clone();
+        let birthday = self.merchant_birthday;
+        let address = self.merchant_address.clone();
+        let path = self.merchant_scan_path.clone();
+
+        let mut state = load_merchant_scan_state(&path);
+        let mut next = if state.last_height < birthday {
+            birthday
+        } else {
+            state.last_height.saturating_add(1)
+        };
+        let scan_from = next;
+
+        let tip = tokio::time::timeout(
+            LWD_REQUEST_TIMEOUT,
+            client.get_latest_block(service::ChainSpec {}),
+        )
+        .await
+        .map_err(|_| "timed out fetching the chain tip for the merchant scan".to_string())?
+        .map_err(|e| format!("cannot fetch the chain tip for the merchant scan: {e}"))?
+        .into_inner();
+        let tip_height = u32::try_from(tip.height)
+            .map_err(|_| format!("implausible tip height {}", tip.height))?;
+
+        let mut blocks_scanned = 0u32;
+        while next <= tip_height {
+            let end = std::cmp::min(next.saturating_add(MERCHANT_SCAN_CHUNK - 1), tip_height);
+            let mut stream = tokio::time::timeout(
+                LWD_REQUEST_TIMEOUT,
+                client.get_block_range(service::BlockRange {
+                    start: Some(service::BlockId {
+                        height: u64::from(next),
+                        hash: vec![],
+                    }),
+                    end: Some(service::BlockId {
+                        height: u64::from(end),
+                        hash: vec![],
+                    }),
+                    pool_types: vec![],
+                }),
+            )
+            .await
+            .map_err(|_| {
+                format!("timed out fetching blocks {next} to {end} for the merchant scan")
+            })?
+            .map_err(|e| {
+                format!("cannot fetch blocks {next} to {end} for the merchant scan: {e}")
+            })?
+            .into_inner();
+
+            while let Some(block) = stream
+                .message()
+                .await
+                .map_err(|e| format!("cannot read the block stream: {e}"))?
+            {
+                let height = u32::try_from(block.height)
+                    .map_err(|_| format!("implausible block height {}", block.height))?;
+                for tx in &block.vtx {
+                    let txid_bytes: [u8; 32] = tx
+                        .txid
+                        .as_slice()
+                        .try_into()
+                        .map_err(|_| format!("block {height} carries a malformed transaction id"))?;
+                    let txid = TxId::from_bytes(txid_bytes);
+                    for (index, compact) in tx.ironwood_actions.iter().enumerate() {
+                        let Some(row) = merchant_try_compact_action(
+                            &mut client,
+                            &prepared,
+                            &merchant_receiver,
+                            &address,
+                            txid,
+                            index as u32,
+                            compact,
+                            height,
+                            block.time,
+                        )
+                        .await?
+                        else {
+                            continue;
+                        };
+                        let already_known = state
+                            .rows
+                            .iter()
+                            .any(|r| r.txid == row.txid && r.output_index == row.output_index);
+                        if !already_known {
+                            println!(
+                                "merchant scan: {} zat in block {} in {}, memo {}",
+                                row.zatoshis,
+                                row.block,
+                                row.txid,
+                                row.memo.clone().unwrap_or_else(|| "none".to_string())
+                            );
+                            state.rows.push(row);
+                        }
+                    }
+                }
+                blocks_scanned = blocks_scanned.saturating_add(1);
+                state.last_height = state.last_height.max(height);
+            }
+            // Saved after every chunk, so an interrupted scan resumes where it
+            // stopped instead of starting over.
+            save_merchant_scan_state(&path, &state);
+            next = end.saturating_add(1);
+        }
+
+        Ok(MerchantScan {
+            address,
+            key_used: "merchant incoming viewing key".to_string(),
+            // Stated on every read: this key can open notes. It cannot sign
+            // anything, so it cannot move the money it just showed you.
+            can_spend: false,
+            scanned_from: scan_from,
+            scanned_to: state.last_height,
+            blocks_scanned,
+            rows: state.rows.clone(),
+        })
     }
 
     /// What the house account holds, split by whether it can be spent right now.
@@ -483,6 +877,294 @@ impl HouseWallet {
         // Still on its way, so the only way to find out is to look at the chain.
         let tip = self.sync().await?;
         Ok(TxStatus::new(self.tx_height(txid)?, tip))
+    }
+
+    /// GATE ONLY (SCOPE-CABINET-4.md section 3): export one received note's
+    /// plaintext and verify it against the transaction that is on the chain.
+    ///
+    /// Four checks, all of which must pass before the cabinet may ship a
+    /// single-payment path:
+    /// 1. A plaintext disclosure exists for a real received note.
+    /// 2. Its commitment recomputes to the commitment in the on-chain output.
+    /// 3. The transaction sits at the claimed height on testnet.
+    /// 4. The returned payload contains no key material.
+    ///
+    /// The note is read through a second, read-only SQLite connection because
+    /// `WalletDb` keeps its own connection private. Nothing here can write.
+    /// A spent note is still a real received note and still proves receipt;
+    /// spent status is deliberately out of scope for this path. Spend status is
+    /// read from the spend table, not from the nullifier column, because this
+    /// wallet stores a nullifier for every detected note.
+    pub async fn disclosure_report(
+        &mut self,
+        txid_hex: Option<&str>,
+        output_index: Option<u32>,
+    ) -> Result<DisclosureReport, String> {
+        let txid_filter: Option<Vec<u8>> = match txid_hex {
+            Some(text) => Some(
+                TxId::from_hex(text.trim())
+                    .ok_or_else(|| {
+                        "not a transaction id: expected 64 hexadecimal digits".to_string()
+                    })?
+                    .as_ref()
+                    .to_vec(),
+            ),
+            None => None,
+        };
+
+        let conn = rusqlite::Connection::open_with_flags(
+            &self.db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .map_err(|e| format!("cannot open the wallet database read-only: {e}"))?;
+
+        // Ironwood is the pool this wallet's notes are actually in. The pool is
+        // named in the report so the verifier knows which output format to read.
+        let row = conn
+            .query_row(
+                "SELECT n.id, n.action_index, n.account_id, n.diversifier, n.value,
+                        n.rho, n.rseed, n.memo, n.note_version,
+                        EXISTS (SELECT 1 FROM ironwood_received_note_spends s
+                                WHERE s.ironwood_received_note_id = n.id),
+                        n.recipient_key_scope, t.txid, t.mined_height
+                 FROM ironwood_received_notes n
+                 JOIN transactions t ON t.id_tx = n.transaction_id
+                 WHERE t.mined_height IS NOT NULL
+                   AND n.recipient_key_scope = 0
+                   AND (?1 IS NULL OR t.txid = ?1)
+                   AND (?2 IS NULL OR n.action_index = ?2)
+                 ORDER BY t.mined_height DESC, n.action_index DESC, n.id DESC
+                 LIMIT 1",
+                rusqlite::params![txid_filter, output_index],
+                |r| {
+                    Ok((
+                        r.get::<_, i64>(0)?,
+                        r.get::<_, i64>(1)?,
+                        r.get::<_, i64>(2)?,
+                        r.get::<_, Vec<u8>>(3)?,
+                        r.get::<_, i64>(4)?,
+                        r.get::<_, Vec<u8>>(5)?,
+                        r.get::<_, Vec<u8>>(6)?,
+                        r.get::<_, Option<Vec<u8>>>(7)?,
+                        r.get::<_, i64>(8)?,
+                        r.get::<_, i64>(9)?,
+                        r.get::<_, i64>(10)?,
+                        r.get::<_, Vec<u8>>(11)?,
+                        r.get::<_, i64>(12)?,
+                    ))
+                },
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    "the wallet has no mined external-scope received note matching that request \
+                     (change notes at internal addresses are outside the merchant receipt path)"
+                        .to_string()
+                }
+                other => format!("cannot read the received note: {other}"),
+            })?;
+
+        let note_id = row.0;
+        let action_index = u32::try_from(row.1)
+            .map_err(|_| "stored note has a negative action index".to_string())?;
+        let account_id = row.2;
+        let diversifier_bytes: [u8; 11] = row
+            .3
+            .try_into()
+            .map_err(|_| "stored note has a malformed diversifier".to_string())?;
+        let value_zat = u64::try_from(row.4)
+            .map_err(|_| "stored note has a negative value".to_string())?;
+        let rho_bytes: [u8; 32] = row
+            .5
+            .try_into()
+            .map_err(|_| "stored note has a malformed rho".to_string())?;
+        let rseed_bytes: [u8; 32] = row
+            .6
+            .try_into()
+            .map_err(|_| "stored note has a malformed random seed".to_string())?;
+        let memo_bytes = row.7;
+        let note_version_code = u8::try_from(row.8)
+            .map_err(|_| "stored note has an invalid version".to_string())?;
+        let spent = row.9 != 0;
+        let scope_code = row.10;
+        if scope_code != 0 {
+            return Err(format!(
+                "the selected note is at key scope {scope_code}, not the external scope this receipt path handles"
+            ));
+        }
+        let txid_bytes: [u8; 32] = row
+            .11
+            .try_into()
+            .map_err(|_| "stored transaction has a malformed id".to_string())?;
+        let claimed_height = u32::try_from(row.12)
+            .map_err(|_| "stored transaction has an invalid height".to_string())?;
+        let txid = TxId::from_bytes(txid_bytes);
+
+        // Rebuild the recipient from the account's incoming viewing key and the
+        // note's diversifier. This is the same reconstruction the wallet itself
+        // performs; no spending or full viewing key is needed.
+        let (uivk_str, ufvk_str): (String, Option<String>) = conn
+            .query_row(
+                "SELECT uivk, ufvk FROM accounts WHERE id = ?1",
+                [account_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .map_err(|e| format!("cannot read the account's viewing key: {e}"))?;
+        let uivk = UnifiedIncomingViewingKey::decode(&Network::TestNetwork, &uivk_str)
+            .map_err(|e| format!("cannot decode the account's incoming viewing key: {e}"))?;
+        let ivk = uivk
+            .orchard()
+            .as_ref()
+            .ok_or_else(|| "the account has no Orchard incoming viewing key".to_string())?;
+        let recipient = ivk.address(Diversifier::from_bytes(diversifier_bytes));
+
+        let rho = Option::<Rho>::from(Rho::from_bytes(&rho_bytes))
+            .ok_or_else(|| "stored note has an invalid rho".to_string())?;
+        let rseed = Option::<RandomSeed>::from(RandomSeed::from_bytes(rseed_bytes, &rho))
+            .ok_or_else(|| "stored note has an invalid random seed".to_string())?;
+        let note_version = match note_version_code {
+            2 => OrchardNoteVersion::V2,
+            3 => OrchardNoteVersion::V3,
+            other => return Err(format!("unsupported note version {other}")),
+        };
+        let note = Option::<OrchardNote>::from(OrchardNote::from_parts(
+            recipient,
+            NoteValue::from_raw(value_zat),
+            rho,
+            rseed,
+            note_version,
+        ))
+        .ok_or_else(|| "stored note fields do not form a valid note".to_string())?;
+
+        let computed_cmx: ExtractedNoteCommitment = note.commitment().into();
+        let computed_bytes = computed_cmx.to_bytes();
+
+        // Fetch the transaction from the network, not from the wallet's copy,
+        // so the commitment comparison and the height both come from the chain.
+        let network_tx = self
+            .client
+            .get_transaction(service::TxFilter {
+                block: None,
+                index: 0,
+                hash: txid.as_ref().to_vec(),
+            })
+            .await
+            .map_err(|e| format!("cannot fetch the transaction from lightwalletd: {e}"))?
+            .into_inner();
+
+        let network_height = if network_tx.height == 0 || network_tx.height == u64::MAX {
+            None
+        } else {
+            Some(
+                u32::try_from(network_tx.height)
+                    .map_err(|_| "lightwalletd returned an invalid height".to_string())?,
+            )
+        };
+        let height_confirmed = network_height == Some(claimed_height);
+
+        let tx = Transaction::read(
+            &network_tx.data[..],
+            BranchId::for_height(
+                &Network::TestNetwork,
+                BlockHeight::from(claimed_height),
+            ),
+        )
+        .map_err(|e| format!("cannot parse the transaction returned by lightwalletd: {e}"))?;
+        let bundle = tx
+            .ironwood_bundle()
+            .ok_or_else(|| "the transaction has no Ironwood bundle".to_string())?;
+        let action = bundle
+            .actions()
+            .get(action_index as usize)
+            .ok_or_else(|| {
+                format!("the transaction has no Ironwood action at index {action_index}")
+            })?;
+        let onchain_bytes: [u8; 32] = action.cmx().into();
+        let commitment_matches = computed_bytes == onchain_bytes;
+
+        let (memo_hex, memo_text) = disclosure_memo(memo_bytes.as_deref());
+
+        let mut report = DisclosureReport {
+            note_id,
+            txid: txid.as_hex(),
+            pool: "ironwood".to_string(),
+            output_index: action_index,
+            claimed_height,
+            network_height,
+            value_zat,
+            note_version: note_version_code,
+            diversifier: hex::encode(diversifier_bytes),
+            rho: hex::encode(rho_bytes),
+            rseed: hex::encode(rseed_bytes),
+            recipient: hex::encode(recipient.to_raw_address_bytes()),
+            recipient_scope: "external".to_string(),
+            memo_hex,
+            memo_text,
+            note_commitment: hex::encode(computed_bytes),
+            onchain_commitment: hex::encode(onchain_bytes),
+            spent,
+            checks: vec![
+                DisclosureCheck {
+                    name: "plaintext_exported".to_string(),
+                    passed: true,
+                    detail: format!(
+                        "note {note_id} from transaction {} at Ironwood action {action_index}, value {value_zat} zatoshis",
+                        txid.as_hex()
+                    ),
+                },
+                DisclosureCheck {
+                    name: "commitment_matches".to_string(),
+                    passed: commitment_matches,
+                    detail: format!(
+                        "recomputed commitment {} against on-chain output commitment {}",
+                        hex::encode(computed_bytes),
+                        hex::encode(onchain_bytes)
+                    ),
+                },
+                DisclosureCheck {
+                    name: "height_confirmed".to_string(),
+                    passed: height_confirmed,
+                    detail: match network_height {
+                        Some(h) => format!(
+                            "claimed height {claimed_height}, lightwalletd reports height {h}"
+                        ),
+                        None => format!(
+                            "claimed height {claimed_height}, lightwalletd does not report the transaction as mined"
+                        ),
+                    },
+                },
+            ],
+            verified: false,
+        };
+
+        // Criterion 4 is checked, not asserted: serialize what we are about to
+        // send and look for the account's keys and the house seed in it.
+        let probe = serde_json::to_string(&report)
+            .map_err(|e| format!("cannot serialize the disclosure report: {e}"))?;
+        let mut secrets: Vec<(&str, String)> = vec![
+            ("incoming viewing key", uivk_str),
+            ("seed", hex::encode(&self.seed)),
+        ];
+        if let Some(ufvk) = ufvk_str {
+            secrets.push(("full viewing key", ufvk));
+        }
+        let leaked = secrets
+            .iter()
+            .find(|(_, value)| !value.is_empty() && probe.contains(value.as_str()));
+        report.checks.push(match leaked {
+            Some((label, _)) => DisclosureCheck {
+                name: "no_key_material".to_string(),
+                passed: false,
+                detail: format!("the payload contains the {label}"),
+            },
+            None => DisclosureCheck {
+                name: "no_key_material".to_string(),
+                passed: true,
+                detail: "the payload contains no seed, full viewing key or incoming viewing key text"
+                    .to_string(),
+            },
+        });
+        report.verified = report.checks.iter().all(|check| check.passed);
+        Ok(report)
     }
 
     fn tx_height(&self, txid: TxId) -> Result<Option<u32>, String> {
@@ -791,4 +1473,192 @@ fn load_or_create_transparent_address(path: &Path, seed: &[u8]) -> Result<String
     std::fs::write(path, &address)
         .map_err(|e| format!("cannot save transparent address: {e}"))?;
     Ok(address)
+}
+
+/// How many compact blocks one merchant-scan request asks lightwalletd for.
+/// Small enough that a slow server answers well inside `LWD_REQUEST_TIMEOUT`,
+/// large enough that catching up over a quiet weekend is a handful of requests.
+const MERCHANT_SCAN_CHUNK: u32 = 100;
+
+/// The shielded receiver inside the merchant's stored address.
+///
+/// The scan compares every note it opens against this receiver, so a payment to
+/// some other address can never be filed as one of the merchant's receipts.
+fn merchant_address_receiver(address: &str) -> Result<orchard::Address, String> {
+    match Address::decode(&Network::TestNetwork, address)
+        .ok_or_else(|| format!("the merchant address on file cannot be decoded: {address}"))?
+    {
+        Address::Unified(ua) => ua
+            .orchard()
+            .copied()
+            .ok_or_else(|| "the merchant address on file has no shielded receiver".to_string()),
+        _ => Err("the merchant address on file is not a unified address".to_string()),
+    }
+}
+
+/// A ZIP-302 text memo, and only that. An empty memo, a memo of arbitrary
+/// bytes, or anything that will not parse becomes `None`: the cabinet never
+/// prints a message the payment did not carry.
+fn merchant_memo_text(memo_bytes: &[u8]) -> Option<String> {
+    match Memo::from_bytes(memo_bytes) {
+        Ok(Memo::Text(text)) => Some(String::from(text)),
+        _ => None,
+    }
+}
+
+/// Tries one compact Ironwood action against the merchant's incoming viewing key.
+///
+/// `Ok(None)` is the ordinary answer: this output belongs to somebody else,
+/// which is true of every payment on the chain except the merchant's own.
+/// Anything else is either a receipt or a real problem, and a real problem comes
+/// back as an error rather than being quietly dropped, because a missing receipt
+/// would look exactly like "no payment yet" on screen.
+#[allow(clippy::too_many_arguments)]
+async fn merchant_try_compact_action(
+    client: &mut CompactTxStreamerClient<tonic::transport::Channel>,
+    prepared: &PreparedIncomingViewingKey,
+    merchant_receiver: &orchard::Address,
+    address: &str,
+    txid: TxId,
+    output_index: u32,
+    compact: &CompactOrchardAction,
+    height: u32,
+    block_time: u32,
+) -> Result<Option<MerchantRow>, String> {
+    // A compact action is exactly 32 + 32 + 32 + 52 bytes. Anything else is a
+    // malformed block from the server, and the scan refuses to guess at it.
+    let nullifier_bytes: [u8; 32] = compact
+        .nullifier
+        .as_slice()
+        .try_into()
+        .map_err(|_| format!("block {height} carries a malformed action nullifier"))?;
+    let cmx_bytes: [u8; 32] = compact
+        .cmx
+        .as_slice()
+        .try_into()
+        .map_err(|_| format!("block {height} carries a malformed note commitment"))?;
+    let epk_bytes: [u8; 32] = compact
+        .ephemeral_key
+        .as_slice()
+        .try_into()
+        .map_err(|_| format!("block {height} carries a malformed ephemeral key"))?;
+    let ciphertext: [u8; 52] = compact
+        .ciphertext
+        .as_slice()
+        .try_into()
+        .map_err(|_| format!("block {height} carries a malformed compact ciphertext"))?;
+
+    let Some(nullifier) =
+        Option::<OrchardNullifier>::from(OrchardNullifier::from_bytes(&nullifier_bytes))
+    else {
+        return Err(format!("block {height} carries an invalid action nullifier"));
+    };
+    let Some(cmx) =
+        Option::<ExtractedNoteCommitment>::from(ExtractedNoteCommitment::from_bytes(&cmx_bytes))
+    else {
+        return Err(format!("block {height} carries an invalid note commitment"));
+    };
+
+    // Trial decryption with the incoming viewing key alone (ZIP 307). The
+    // nullifier key slot stays empty, which is what makes this read-only.
+    let action = CompactAction::from_parts(
+        nullifier,
+        cmx,
+        EphemeralKeyBytes(epk_bytes),
+        ciphertext,
+    );
+    let domain = IronwoodDomain::for_compact_action(&action);
+    let Some((note, recipient)) = try_compact_note_decryption(&domain, prepared, &action) else {
+        return Ok(None);
+    };
+    if &recipient != merchant_receiver {
+        return Err(format!(
+            "a note in {} opened for an address that is not the merchant's own",
+            txid.as_hex()
+        ));
+    }
+    let zatoshis = note.value().inner();
+
+    // The compact block has no memo. Fetch this one payment in full and decrypt
+    // it a second time, so the memo on the row is the memo the payment carried.
+    let full = tokio::time::timeout(
+        LWD_REQUEST_TIMEOUT,
+        client.get_transaction(service::TxFilter {
+            block: None,
+            index: 0,
+            hash: txid.as_ref().to_vec(),
+        }),
+    )
+    .await
+    .map_err(|_| format!("timed out fetching {} to read its memo", txid.as_hex()))?
+    .map_err(|e| format!("cannot fetch {} to read its memo: {e}", txid.as_hex()))?
+    .into_inner();
+    let tx = Transaction::read(
+        &full.data[..],
+        BranchId::for_height(&Network::TestNetwork, BlockHeight::from(height)),
+    )
+    .map_err(|e| format!("cannot parse {}: {e}", txid.as_hex()))?;
+    let full_action = tx
+        .ironwood_bundle()
+        .and_then(|bundle| bundle.actions().get(output_index as usize))
+        .ok_or_else(|| {
+            format!(
+                "{} has no Ironwood action at index {output_index}",
+                txid.as_hex()
+            )
+        })?;
+    let (full_note, _, memo_bytes) = try_note_decryption(
+        &IronwoodDomain::for_action(full_action),
+        prepared,
+        full_action,
+    )
+    .ok_or_else(|| {
+        format!(
+            "the compact block opened a note in {} that the full transaction did not",
+            txid.as_hex()
+        )
+    })?;
+
+    // Cross-check the two reads before publishing anything. If they disagree,
+    // the row would be a claim the machine cannot support.
+    let compact_cmx: ExtractedNoteCommitment = note.commitment().into();
+    let full_cmx: ExtractedNoteCommitment = full_note.commitment().into();
+    if full_note.value().inner() != zatoshis || compact_cmx.to_bytes() != full_cmx.to_bytes() {
+        return Err(format!(
+            "the compact and full reads of {} disagree about the note",
+            txid.as_hex()
+        ));
+    }
+
+    Ok(Some(MerchantRow {
+        txid: txid.as_hex(),
+        pool: "ironwood".to_string(),
+        output_index,
+        zatoshis,
+        address: address.to_string(),
+        memo: merchant_memo_text(&memo_bytes),
+        block: height,
+        block_time,
+    }))
+}
+
+/// Reads the merchant scan's cache. A missing or unreadable file simply means
+/// "start again from the merchant's birthday": every row is re-derived from the
+/// chain, so nothing is lost but time.
+fn load_merchant_scan_state(path: &Path) -> MerchantScanState {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
+fn save_merchant_scan_state(path: &Path, state: &MerchantScanState) {
+    match serde_json::to_string(state) {
+        Ok(text) => {
+            if let Err(e) = std::fs::write(path, text) {
+                eprintln!("merchant scan: could not save progress: {e}");
+            }
+        }
+        Err(e) => eprintln!("merchant scan: could not write down progress: {e}"),
+    }
 }

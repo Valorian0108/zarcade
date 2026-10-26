@@ -71,6 +71,14 @@ zip321 = "=0.10.0-pre.1"
 # 0.8 is what zcash_client_sqlite 0.23 requires, so the types unify.
 shardtree = "0.8"
 
+# Note decryption for the cabinet-four merchant scan (SCOPE-CABINET-4.md 2.2).
+# The scan trial-decrypts compact Ironwood actions with the merchant account's
+# incoming viewing key only, so it needs `try_compact_note_decryption` and
+# `try_note_recryption` themselves rather than the wallet's sync machinery.
+# Already a transitive dependency of zcash_client_backend 0.25.0-pre.1 at
+# exactly this version (checked in Cargo.lock), so naming it downloads nothing.
+zcash_note_encryption = "=0.5.1"
+
 # Zcash stack: the NU7-aware pre-release set, pinned exactly (D-028).
 #
 # WHY A PRE-RELEASE. The public testnet activated NU7 at height 4,465,026 on
@@ -107,6 +115,10 @@ zcash_protocol = "=0.11.0-pre.0"
 zcash_keys = { version = "=0.17.0-pre.1", features = ["transparent-inputs"] }
 zcash_primitives = "=0.31.0-pre.1"
 zcash_proofs = { version = "=0.31.0-pre.1", features = ["bundled-prover"] }
+# Named directly for the single-payment disclosure gate (SCOPE-CABINET-4 §2.4):
+# rebuilding an Orchard-shaped note and its commitment. Already a transitive
+# dependency at exactly this version, so naming it downloads nothing new.
+orchard = "=0.16.0"
 
 # Named directly for one thing: the `IncomingViewingKey` trait, whose
 # `default_address()` is how we derive the house's own transparent address

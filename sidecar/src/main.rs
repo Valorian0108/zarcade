@@ -283,10 +283,16 @@ async fn send(State(state): Shared, headers: HeaderMap, Json(req): Json<SendRequ
     };
     // Lock two (D-094): the game's own policy, enforced here instead of
     // trusted from the caller. The money can only ever go to one of the
-    // house's two own addresses, and only in the fixed round amount, so
-    // nobody who reaches this door can aim a payment anywhere else.
-    if let Err(e) = policy::check_send(&req.to, req.zatoshis, w.address(), w.transparent_address())
-    {
+    // arcade's own three addresses, and only in the fixed round amount, so
+    // nobody who reaches this door can aim a payment anywhere else. The third
+    // address is cabinet four's merchant account (SCOPE-CABINET-4.md 2.1).
+    if let Err(e) = policy::check_send(
+        &req.to,
+        req.zatoshis,
+        w.address(),
+        w.transparent_address(),
+        w.merchant_address(),
+    ) {
         return fail(StatusCode::FORBIDDEN, e.to_string());
     }
     // Lock three (D-094): the durable daily budget. The website keeps its own
@@ -397,6 +403,32 @@ async fn send_history(State(state): Shared, Query(q): Query<HistoryQuery>) -> Re
         }));
     }
     Json(json!({ "ok": true, "entries": entries })).into_response()
+}
+
+/// Cabinet four's read-only window (SCOPE-CABINET-4.md 2.3).
+///
+/// Everything in this response came out of a note that the merchant account's
+/// incoming viewing key decrypted. There is no key material in it, no
+/// nullifier, no sender, no balance, and no write path: the cabinet looks
+/// through this window and cannot reach through it.
+///
+/// A row appears only when a payment is really on the chain. While the deposit
+/// is still travelling, the row list is empty, and the cabinet says so instead
+/// of pretending.
+async fn merchant(State(state): Shared) -> Response {
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
+    match w.merchant_scan().await {
+        Ok(scan) => Json(json!({
+            "ok": true,
+            "network": "testnet",
+            "merchant": scan,
+        }))
+        .into_response(),
+        Err(e) => fail(StatusCode::BAD_GATEWAY, e),
+    }
 }
 
 #[derive(Deserialize)]
@@ -531,6 +563,29 @@ async fn tx_status(State(state): Shared, Query(q): Query<TxStatusQuery>) -> Resp
     }
 }
 
+#[derive(Deserialize)]
+struct GateQuery {
+    txid: Option<String>,
+    index: Option<u32>,
+}
+
+/// GATE ONLY (SCOPE-CABINET-4.md section 3). Reads one received note from a
+/// second, read-only SQLite connection and verifies it against the chain.
+///
+/// It is registered only when the process is started with ZARCADE_GATE=1,
+/// because its payload includes the note's randomness. The shipped cabinet
+/// will call a verifier that returns the result, never this plaintext.
+async fn gate_disclosure(State(state): Shared, Query(q): Query<GateQuery>) -> Response {
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
+    match w.disclosure_report(q.txid.as_deref(), q.index).await {
+        Ok(report) => Json(json!({ "ok": true, "report": report })).into_response(),
+        Err(e) => fail(StatusCode::BAD_REQUEST, e),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // rustls cannot guess which crypto engine to use when more than one (or
@@ -603,6 +658,12 @@ async fn main() {
         history: Mutex::new(ledger),
     });
 
+    // Research mode for the cabinet-four gate. The gate verifies a transaction
+    // directly against lightwalletd, so it does not need the household scan;
+    // skipping it here avoids blocking the gate behind a half-hour scan of
+    // blocks it never reads. This mode is never set in production.
+    let gate_enabled = std::env::var("ZARCADE_GATE").ok().as_deref() == Some("1");
+
     // Background startup: open the wallet, then keep it. On failure, retry with
     // a short capped backoff so a transient network blip self-heals instead of
     // leaving the service permanently "warming up". The door is already open,
@@ -618,11 +679,23 @@ async fn main() {
                 match HouseWallet::init(&data_dir).await {
                     Ok(mut house) => {
                         println!("house wallet ready; deposit address:\n  {}", house.address());
-                        // One initial sync so the first request is fast; failures
-                        // are not fatal (every balance/send syncs on demand).
-                        match house.sync().await {
-                            Ok(h) => println!("initial sync complete up to height {h}"),
-                            Err(e) => println!("initial sync failed, will retry on demand: {e}"),
+                        println!(
+                            "merchant address (cabinet four):\n  {}",
+                            house.merchant_address()
+                        );
+                        if gate_enabled {
+                            println!(
+                                "gate mode: skipping the initial scan; the gate reads its transaction from lightwalletd directly"
+                            );
+                        } else {
+                            // One initial sync so the first request is fast; failures
+                            // are not fatal (every balance/send syncs on demand).
+                            match house.sync().await {
+                                Ok(h) => println!("initial sync complete up to height {h}"),
+                                Err(e) => {
+                                    println!("initial sync failed, will retry on demand: {e}")
+                                }
+                            }
                         }
                         *state.wallet.lock().await = Some(house);
                         println!("house wallet is live");
@@ -647,8 +720,17 @@ async fn main() {
         .route("/sync", post(sync_now))
         .route("/send", post(send))
         .route("/history", get(send_history))
-        .route("/admin/split", post(admin_split))
-        .with_state(state);
+        .route("/merchant", get(merchant))
+        .route("/admin/split", post(admin_split));
+
+    // The gate's payload includes a note's randomness, so the route only
+    // exists when the operator deliberately asks for it.
+    let app = if gate_enabled {
+        app.route("/gate/disclosure", get(gate_disclosure))
+    } else {
+        app
+    }
+    .with_state(state);
 
     axum::serve(listener, app).await.expect("server crashed");
 }
