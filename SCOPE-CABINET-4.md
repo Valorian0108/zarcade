@@ -62,9 +62,11 @@ happened and why. No banned buzzwords. No em dashes in player copy.
 
 - A dedicated merchant account in the sidecar, with its own shielded account
   and viewing keys. The pot's key is never used and never exposed.
-- One real testnet payment of 1,000 zatoshis from the house pot into that
+- Real testnet payments of 1,000 zatoshis each from the house pot into that
   account, through the existing single money route (D-025). Read only from the
-  cabinet's side: the cabinet never sends money.
+  cabinet's side: the cabinet never sends money. Two deposits exist, not one,
+  because beat 2's board shows two sealed rows and both must be real
+  (owner's choice 2026-10-26, D-119).
 - The payment carries the memo INV-204 from the customer. The memo must be set
   in the payment itself and read back through the incoming-only scan. If the
   single money route cannot carry it without adding a second route, the memo
@@ -81,6 +83,15 @@ happened and why. No banned buzzwords. No em dashes in player copy.
   1,000 zatoshis, memo INV-204, Ironwood action 1, block 4543955, and no sender.
   The house paid a 10,000-zatoshi fee and its unspent total fell from
   23,790,000 to 23,779,000 zatoshis, which is the money really leaving the pot.
+- **The second deposit was made on 2026-10-26 (D-119).** One thousand zatoshis
+  left the house pot for the same merchant address in transaction
+  `6f68ea5be2661e8dd5a87a1c3d9aaf675f4e38daa2c914ee1f441216a1cc7c25`, mined at
+  height 4544108, carrying the memo INV-187. It went through the same route, the
+  same fixed amount and the same policy check as the first; nothing new was
+  built to send it. The incoming-only scan now reads back exactly two rows, and
+  the shipped verifier proves this second receipt on its own: all five checks
+  pass, claimed block 4544108 and lightwalletd's block 4544108 agree, and the
+  memo INV-187 comes out of the chain through the incoming key.
 
 ### 2.2 Incoming-viewing-key-only scan (settled)
 
@@ -129,7 +140,7 @@ sidecar: the router registers one verb, so there is no write path to find. The
 response was scanned for the seed and for both accounts' incoming and full
 viewing keys and contained none.
 
-### 2.4 Single-payment disclosure (mechanism settled, wiring to verify)
+### 2.4 Single-payment disclosure (mechanism proven on real money)
 
 The "one sealed note" path must be real or it does not ship.
 
@@ -148,6 +159,17 @@ The "one sealed note" path must be real or it does not ship.
   (`ReceivedNotes`, `get_spendable_note`), the memo (`get_memo`) and the
   transaction (`get_transaction`).
 - Out of scope for this path: spent status. A receipt proof does not need it.
+- **Shipped 2026-10-26 (D-118).** The verifier is `merchant_verify`, exposed as
+  GET `/merchant/verify?txid=…&output=…`. It proves the merchant's real deposit
+  (transaction `1e829a3e…`, Ironwood action 1, 1,000 zatoshis, memo INV-204,
+  block 4543955) and returns the result only: the response type has no field for
+  the note's randomness, diversifier or recipient bytes, and two of its five
+  checks exist to prove that by searching the serialized payload for those
+  fragments and for every stored key. It refuses a transaction the incoming-only
+  scan never decrypted for the merchant's address, so it cannot be pointed at
+  arbitrary chain data. The research gate keeps its full plaintext and stays
+  behind `ZARCADE_GATE=1`; the shipped route never sets that flag and never
+  carries the plaintext.
 
 ### 2.5 The balance question
 
@@ -228,11 +250,13 @@ One room, seven beats. Every beat has one action.
 
 ### Beat 2. The preview
 - **See:** the key travels to the board and turns. Rows warm one by one. Each
-  reveals amount, your receiving address, time and block. The deposit row also
-  shows its memo, INV-204, if the chain really carries it. Each keeps "who
-  paid: still sealed". The rows draw a quiet link between them, because they
-  belong to one account. A teach line names the real thing once: this is what
-  the incoming viewing key shows.
+  reveals amount, your receiving address, time and block, and its own memo. Both
+  rows are real receipts of this account: 1,000 zatoshis with the memo INV-204 at
+  block 4543955, and 1,000 zatoshis with the memo INV-187 at block 4544108
+  (D-117, D-119). The one the partner is asking about is INV-204, and the copy
+  says so plainly. Each row keeps "who paid: still sealed". The rows draw a quiet
+  link between them, because they belong to one account. A teach line names the
+  real thing once: this is what the incoming viewing key shows.
 - **Do:** one button, try the drawer.
 
 ### Beat 3. The boundary
@@ -250,9 +274,13 @@ One room, seven beats. Every beat has one action.
 
 ### Beat 5. The consequence
 The window across the room is the partner's view. Three distinct states:
-- **Key:** the window lights and stays lit. New incoming records arrive one by
-  one after the visit, each lighting in the partner's view, the addresses still
-  linked. A line says the window stays open, and there is no undo.
+- **Key:** the window lights and stays lit, and both real receipts are visible in
+  it, the addresses still linked. A line says the window stays open: anything
+  paid to this account from now on shows up in that same view, and there is no
+  undo. Nothing new arrives on screen during the beat. A payment landing while a
+  player watches would have to be sent by the game, and the cabinet has no money
+  route (section 5, item 7), so the ongoing scope is stated and lit, not staged
+  (amended 2026-10-26, D-119).
 - **One note:** only the single receipt lights. One record, one amount, one
   time. Everything else stays dark. A line says this proves one payment and
   nothing else.
@@ -295,7 +323,8 @@ The window across the room is the partner's view. Three distinct states:
 6. No new beats, no score, no timer, no fail state, no moral scoring, no
    branching beyond the one choice.
 7. No new money routes (D-025). No spending, sweeping or pot changes from the
-   cabinet. One real testnet payment, one direction.
+   cabinet. Two real testnet payments exist, both sent through the one existing
+   route by hand, one direction, and the cabinet only reads them.
 8. No fabricated chain data presented as real. Anything modelled must be
    labelled on screen. Sample values only while the receipt says Sample.
 9. No palette, font, curtain or room-design changes without approval. No red or
@@ -308,21 +337,22 @@ It does not fake the feature.
 
 ---
 
-## 6. Decisions taken forward (proposed)
+## 6. Decisions taken forward
 
 | Item | Direction | Status |
 |------|-----------|--------|
-| Name | The Merchant's Window | Proposed, owner's yes needed |
-| Story | Deposit for a custom order; partner confirms before releasing materials | Proposed |
-| Memo | INV-204 in the real payment, read back through the key | Proposed, tested in the build |
-| Window | Part of the room; lit and staying lit, one receipt, or dark | Proposed |
-| End card | One plain sentence on single-payment disclosure | Only if the gate passes |
-| Third path | One sealed note, commitment verification | Gate in section 3 |
-| Fallback | Key or nothing, labelled honestly | If the gate fails |
+| Name | The Merchant's Window | Proposed. Final when the scene copy is written. |
+| Story | Deposit for a custom order; partner confirms before releasing materials | Approved with the scope (D-115) |
+| Memo | INV-204 in the real payment, read back through the key | Tested and shipping: read back from the real payment (D-117) |
+| Second receipt | A second real 1,000-zat deposit, memo INV-187, so beat 2's two rows are both real | Owner's choice 2026-10-26, sent and read back (D-119) |
+| Window | Part of the room; lit and staying lit, one receipt, or dark | Approved (D-115). The key state no longer stages arrivals (D-119). |
+| End card | One plain sentence on single-payment disclosure | Locked: the gate passed (D-116) |
+| Third path | One sealed note, commitment verification | Locked: shipped, and verified on both receipts (D-118) |
+| Fallback | Key or nothing, labelled honestly | Dead. The gate passed, so all three paths ship. |
 
-Only one approval remains: the owner's yes to this document. The gate is
-technical, not creative. If the gate fails, the scope is amended before the
-scene copy is written.
+The document is approved (D-115) and the gate has been run (D-116). What is
+left is not approval but work: the scene copy, the cabinet name, and build steps
+4 to 6 in section 7.
 
 ---
 
@@ -333,7 +363,9 @@ scene copy is written.
 2. Sidecar: merchant account, incoming-only scan endpoint, read-only rows, and
    the INV-204 memo readback test. **DONE 2026-10-26; the memo read back from a
    real payment (D-117).**
-3. Sidecar: disclosure export and verifier, if the gate passes.
+3. Sidecar: disclosure export and verifier, if the gate passes. **DONE
+   2026-10-26; the verifier proved the real INV-204 deposit and ships the result
+   only (D-118).**
 4. Web: read-only route, then the seven beats in the approved order.
 5. Copy pass, grandma and banned-word checks, typecheck.
 6. Owner playtest on film, then the decision rows in DECISIONS.md.

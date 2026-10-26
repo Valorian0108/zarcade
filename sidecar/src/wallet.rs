@@ -402,6 +402,36 @@ pub struct MerchantScan {
     pub rows: Vec<MerchantRow>,
 }
 
+/// The shipped disclosure verifier's only output (SCOPE-CABINET-4.md 2.4,
+/// build step 3).
+///
+/// This struct has deliberately no field for the note's plaintext: no
+/// randomness, no diversifier, no recipient bytes. The sidecar decrypts the
+/// note, recomputes its commitment, compares that with the chain, and never
+/// serializes any of the plaintext. Only the result crosses this boundary,
+/// plus facts that are already public (the transaction id, the on-chain
+/// commitment, the heights) or already the merchant's own to show (the amount
+/// and memo of the merchant's receipt). The gate's `DisclosureReport` is the
+/// opposite on purpose: it carries everything and is why it stays behind
+/// ZARCADE_GATE=1.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct ReceiptVerification {
+    pub txid: String,
+    pub pool: String,
+    pub output_index: u32,
+    pub zatoshis: u64,
+    pub memo: Option<String>,
+    /// The block the incoming-only scan recorded the receipt in.
+    pub claimed_height: u32,
+    /// The block lightwalletd reports the transaction in, right now.
+    pub network_height: Option<u32>,
+    /// The commitment the chain itself carries for this output. Not a secret;
+    /// it is what the recomputed commitment is compared against.
+    pub onchain_commitment: String,
+    pub checks: Vec<DisclosureCheck>,
+    pub verified: bool,
+}
+
 /// The scan's progress and its rows, kept in `data/merchant-scan.json`.
 ///
 /// The file is a cache, not a source of truth: every row in it was decrypted
@@ -808,6 +838,256 @@ impl HouseWallet {
             blocks_scanned,
             rows: state.rows.clone(),
         })
+    }
+
+    /// The shipped disclosure verifier (SCOPE-CABINET-4.md 2.4, build step 3):
+    /// prove one of the merchant's receipts against the chain and return the
+    /// result, never the plaintext that proves it.
+    ///
+    /// The story beat is the partner checking the deposit before releasing
+    /// materials; the mechanism is the one the section 3 gate passed on real
+    /// money. Decrypt the note with the merchant's incoming viewing key,
+    /// rebuild its commitment from the plaintext, and compare that with the
+    /// commitment the transaction carries on chain. A match proves the payment:
+    /// the amount, the receiving address and the memo all went into the
+    /// commitment, so the chain itself vouches for them. No Merkle path and no
+    /// tree state are needed, and nothing about the rest of the account is
+    /// revealed.
+    ///
+    /// Two rules keep this honest. The transaction must be one the
+    /// incoming-only scan really decrypted for the merchant's address, so this
+    /// endpoint cannot be pointed at arbitrary chain data. And the plaintext
+    /// (randomness, diversifier, recipient bytes) never leaves: the final
+    /// checks probe the serialized payload for exactly those fragments and for
+    /// every stored key, the same way the gate's fourth criterion did.
+    pub async fn merchant_verify(
+        &mut self,
+        txid_hex: &str,
+        output_index: u32,
+    ) -> Result<ReceiptVerification, String> {
+        let txid = TxId::from_hex(txid_hex.trim()).ok_or_else(|| {
+            "not a transaction id: expected 64 hexadecimal digits".to_string()
+        })?;
+        let canonical = txid.as_hex();
+
+        // Run the incremental scan first, so a payment that landed moments ago
+        // is not rejected just because nobody has looked at the window yet.
+        let scan = self.merchant_scan().await?;
+        let row = scan
+            .rows
+            .iter()
+            .find(|r| r.txid == canonical && r.output_index == output_index)
+            .ok_or_else(|| {
+                format!(
+                    "the merchant's incoming-only scan has no receipt in {canonical} at output {output_index}"
+                )
+            })?
+            .clone();
+
+        let prepared = {
+            let ivk = self
+                .merchant_uivk
+                .orchard()
+                .as_ref()
+                .ok_or_else(|| {
+                    "the merchant account has no Ironwood incoming viewing key".to_string()
+                })?;
+            ivk.prepare()
+        };
+        let merchant_receiver = merchant_address_receiver(&self.merchant_address)?;
+        let mut client = self.client.clone();
+
+        // Everything below comes from the chain as it answers right now, not
+        // from the cache: the whole point of the verifier is an independent
+        // second look.
+        let network_tx = tokio::time::timeout(
+            LWD_REQUEST_TIMEOUT,
+            client.get_transaction(service::TxFilter {
+                block: None,
+                index: 0,
+                hash: txid.as_ref().to_vec(),
+            }),
+        )
+        .await
+        .map_err(|_| format!("timed out fetching {canonical} for verification"))?
+        .map_err(|e| format!("cannot fetch {canonical} for verification: {e}"))?
+        .into_inner();
+        let network_height = if network_tx.height == 0 || network_tx.height == u64::MAX {
+            None
+        } else {
+            Some(
+                u32::try_from(network_tx.height)
+                    .map_err(|_| "lightwalletd returned an invalid height".to_string())?,
+            )
+        };
+        let height_confirmed = network_height == Some(row.block);
+
+        let tx = Transaction::read(
+            &network_tx.data[..],
+            BranchId::for_height(&Network::TestNetwork, BlockHeight::from(row.block)),
+        )
+        .map_err(|e| format!("cannot parse {canonical}: {e}"))?;
+        let action = tx
+            .ironwood_bundle()
+            .and_then(|bundle| bundle.actions().get(output_index as usize))
+            .ok_or_else(|| {
+                format!("{canonical} has no Ironwood action at index {output_index}")
+            })?;
+        let (note, recipient, memo_bytes) =
+            try_note_decryption(&IronwoodDomain::for_action(action), &prepared, action)
+                .ok_or_else(|| {
+                    format!(
+                        "the note at {canonical} output {output_index} does not open with the merchant's incoming viewing key, so the scan row and the chain disagree"
+                    )
+                })?;
+        if &recipient != &merchant_receiver {
+            return Err(format!(
+                "the note at {canonical} output {output_index} pays an address that is not the merchant's own"
+            ));
+        }
+        let value_zat = note.value().inner();
+        if value_zat != row.zatoshis {
+            return Err(format!(
+                "the chain and the scan disagree about the amount at {canonical} output {output_index}"
+            ));
+        }
+
+        // The commitment is where the proof lives: it was computed by the
+        // sender from value, recipient and randomness, and it is what the chain
+        // stores. Recomputing it from the decrypted plaintext and finding the
+        // same bytes is what turns "the scan says so" into "the chain says so".
+        let computed_bytes: [u8; 32] = ExtractedNoteCommitment::from(note.commitment()).to_bytes();
+        let onchain_bytes: [u8; 32] = action.cmx().into();
+        let commitment_matches = computed_bytes == onchain_bytes;
+        let memo = merchant_memo_text(&memo_bytes);
+
+        // The plaintext fragments that must never cross this boundary. Held
+        // only long enough to prove, below, that the serialized payload does
+        // not contain them. `orchard::Note` is a small Copy value, so there is
+        // nothing to free here; what matters is that it is never serialized,
+        // and the last two checks below verify exactly that.
+        let plaintext_fragments = [
+            hex::encode(note.rho().to_bytes()),
+            hex::encode(note.rseed().as_bytes()),
+            hex::encode(note.recipient().diversifier().as_array()),
+            hex::encode(note.recipient().to_raw_address_bytes()),
+        ];
+
+        let mut result = ReceiptVerification {
+            txid: canonical.clone(),
+            pool: "ironwood".to_string(),
+            output_index,
+            zatoshis: value_zat,
+            memo,
+            claimed_height: row.block,
+            network_height,
+            onchain_commitment: hex::encode(onchain_bytes),
+            checks: vec![
+                DisclosureCheck {
+                    name: "note_decrypted".to_string(),
+                    passed: true,
+                    detail: format!(
+                        "the merchant's incoming viewing key opens the note at Ironwood action {output_index} of {canonical}, worth {value_zat} zatoshis, at the merchant's own address"
+                    ),
+                },
+                DisclosureCheck {
+                    name: "commitment_matches".to_string(),
+                    passed: commitment_matches,
+                    detail: format!(
+                        "recomputed commitment {} against on-chain output commitment {}",
+                        hex::encode(computed_bytes),
+                        hex::encode(onchain_bytes)
+                    ),
+                },
+                DisclosureCheck {
+                    name: "height_confirmed".to_string(),
+                    passed: height_confirmed,
+                    detail: match network_height {
+                        Some(h) => format!(
+                            "the scan recorded this receipt in block {}, lightwalletd reports the transaction in block {h}",
+                            row.block
+                        ),
+                        None => format!(
+                            "the scan recorded this receipt in block {}, lightwalletd does not report the transaction as mined",
+                            row.block
+                        ),
+                    },
+                },
+            ],
+            verified: false,
+        };
+
+        // Both remaining checks are probed, not asserted: serialize exactly
+        // what is about to be sent, then hunt for secrets inside it.
+        let probe = serde_json::to_string(&result)
+            .map_err(|e| format!("cannot serialize the verification result: {e}"))?;
+
+        // Every stored key of every account in this wallet, plus the seed.
+        let conn = rusqlite::Connection::open_with_flags(
+            &self.db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .map_err(|e| format!("cannot open the wallet database read-only: {e}"))?;
+        let mut secrets: Vec<(String, String)> = vec![("seed".to_string(), hex::encode(&self.seed))];
+        let accounts = conn
+            .prepare("SELECT id, name, uivk, ufvk FROM accounts ORDER BY id")
+            .and_then(|mut stmt| {
+                stmt.query_map([], |r| {
+                    Ok((
+                        r.get::<_, i64>(0)?,
+                        r.get::<_, Option<String>>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                        r.get::<_, Option<String>>(3)?,
+                    ))
+                })
+                .and_then(|rows| rows.collect::<Result<Vec<_>, _>>())
+            })
+            .map_err(|e| format!("cannot read the accounts for the key probe: {e}"))?;
+        for (id, name, uivk, ufvk) in accounts {
+            let who = name.unwrap_or_else(|| format!("account {id}"));
+            if let Some(key) = uivk {
+                secrets.push((format!("incoming viewing key of {who}"), key));
+            }
+            if let Some(key) = ufvk {
+                secrets.push((format!("full viewing key of {who}"), key));
+            }
+        }
+        let leaked_key = secrets
+            .iter()
+            .find(|(_, value)| !value.is_empty() && probe.contains(value.as_str()));
+        result.checks.push(match leaked_key {
+            Some((label, _)) => DisclosureCheck {
+                name: "no_key_material".to_string(),
+                passed: false,
+                detail: format!("the payload contains the {label}"),
+            },
+            None => DisclosureCheck {
+                name: "no_key_material".to_string(),
+                passed: true,
+                detail: "the payload contains no seed and no viewing key text of any account"
+                    .to_string(),
+            },
+        });
+
+        let leaked_plaintext = plaintext_fragments
+            .iter()
+            .any(|fragment| probe.contains(fragment.as_str()));
+        result.checks.push(match leaked_plaintext {
+            true => DisclosureCheck {
+                name: "result_only".to_string(),
+                passed: false,
+                detail: "the payload contains part of the note's plaintext".to_string(),
+            },
+            false => DisclosureCheck {
+                name: "result_only".to_string(),
+                passed: true,
+                detail: "the note's randomness, diversifier and recipient bytes stay in the sidecar; only the result is shipped"
+                    .to_string(),
+            },
+        });
+
+        result.verified = result.checks.iter().all(|check| check.passed);
+        Ok(result)
     }
 
     /// What the house account holds, split by whether it can be spent right now.

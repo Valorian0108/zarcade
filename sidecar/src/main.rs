@@ -18,6 +18,15 @@
 //! - GET  /history?limit=N      -> the payments this wallet broadcast, newest first:
 //!                                 txid, kind, amount, mined block (D-093). Read-only
 //!                                 public facts, the supply for The Crowd's record book.
+//! - GET  /merchant             -> cabinet four's window (SCOPE-CABINET-4.md 2.3): the
+//!                                 payments the merchant account received, read with its
+//!                                 incoming viewing key only. Amount, address, memo,
+//!                                 block, transaction id. No sender, no key, no balance.
+//! - GET  /merchant/verify?txid=…&output=…
+//!                              -> proves ONE of those receipts against the chain
+//!                                 (SCOPE-CABINET-4.md 2.4) and returns the result only.
+//!                                 The note's plaintext never crosses this boundary, and
+//!                                 two of the returned checks are the ones that say so.
 //! - POST /admin/split          -> { notes, per_note } -> one transaction that breaks the pot
 //!                                 into many small confirmed notes (D-031). Maintenance only:
 //!                                 needs the x-zarcade-admin token and is never proxied by the
@@ -432,6 +441,51 @@ async fn merchant(State(state): Shared) -> Response {
 }
 
 #[derive(Deserialize)]
+struct VerifyQuery {
+    txid: String,
+    output: Option<u32>,
+}
+
+/// Cabinet four's verifier (SCOPE-CABINET-4.md 2.4, build step 3).
+///
+/// The partner beat asks one question: did that deposit really arrive, and does
+/// the chain itself vouch for the amount and the memo on it? This route answers
+/// with the result of that check and nothing more. The note's plaintext, which
+/// is what makes the check possible, stays inside the sidecar; the last two
+/// checks in the response are the ones that prove it stayed.
+///
+/// Two properties worth stating plainly. It is a GET, because reading is all it
+/// does and no secret rides in the query. And it cannot be pointed at arbitrary
+/// chain data: the transaction has to be one the merchant's incoming-only scan
+/// already decrypted for the merchant's own address.
+///
+/// Callers are expected to ask GET /merchant first and verify a row they were
+/// really given. An error here therefore never means "no such payment"; it
+/// means the check could not be completed, and the cabinet says so rather than
+/// showing a verdict it does not have.
+async fn verify_receipt(State(state): Shared, Query(q): Query<VerifyQuery>) -> Response {
+    let Some(output) = q.output else {
+        return fail(
+            StatusCode::BAD_REQUEST,
+            "the output index is required: ?txid=<64 hex>&output=<index>",
+        );
+    };
+    let mut guard = state.wallet.lock().await;
+    let Some(w) = guard.as_mut() else {
+        return warming();
+    };
+    match w.merchant_verify(&q.txid, output).await {
+        Ok(result) => Json(json!({
+            "ok": true,
+            "network": "testnet",
+            "verification": result,
+        }))
+        .into_response(),
+        Err(e) => fail(StatusCode::BAD_GATEWAY, e),
+    }
+}
+
+#[derive(Deserialize)]
 struct SplitRequest {
     notes: usize,
     per_note: u64,
@@ -721,6 +775,7 @@ async fn main() {
         .route("/send", post(send))
         .route("/history", get(send_history))
         .route("/merchant", get(merchant))
+        .route("/merchant/verify", get(verify_receipt))
         .route("/admin/split", post(admin_split));
 
     // The gate's payload includes a note's randomness, so the route only
