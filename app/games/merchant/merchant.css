@@ -5,10 +5,11 @@
  * every *.css file through @tailwindcss/turbopack with `as: "*.css"`, which
  * disables CSS-module scoping. Every class and keyframe here is prefixed with
  * `mrc-` so nothing can collide with the shipped `gm-` styles, the older
- * `smp-` sample, or the frozen `aud-` design sample it is adapted from.
+ * `smp-` sample, or the `aud-` design sample it was adapted from (deleted
+ * once the room shipped, D-126).
  *
- * The visual language is the owner-approved sample at /sample/audit, reused
- * material for material: oxblood velvet curtain, worn wood and brass, gold
+ * The visual language is the owner-approved design sample, reused material
+ * for material: oxblood velvet curtain, worn wood and brass, gold
  * light on what can be read, cool violet shadow on what stays sealed, and no
  * red and no green as a verdict (D-113, D-114, section 5 item 9).
  *

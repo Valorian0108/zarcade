@@ -17,8 +17,8 @@
  * payment proven when every check is present and passed. If the wallet cannot
  * be read, the room says so instead of showing a placeholder.
  *
- * The visual language is the owner-approved sample at /sample/audit (frozen as
- * a scratchpad, D-115): oxblood velvet curtain, gold for what can be read, cool
+ * The visual language is the owner-approved design sample (deleted once this
+ * room shipped, D-126): oxblood velvet curtain, gold for what can be read, cool
  * violet for what stays sealed, no red and no green as a verdict. The framing is
  * the sample's opposite on purpose. There the player was the auditor and a
  * Watcher hosted; here the player is the merchant, the auditor is the only

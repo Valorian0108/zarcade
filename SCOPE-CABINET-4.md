@@ -7,8 +7,8 @@
 > order in section 7 applies from step 3.**
 > The name is proposed, not locked; it becomes final when the scene copy is
 > written. This cabinet replaces the earlier "Auditor's Key" concept. The
-> sample at `/sample/audit` is frozen as a scratchpad and is not the shipped
-> game.
+> design sample that came before it served its purpose and was deleted once
+> the room shipped (D-126).
 
 ---
 

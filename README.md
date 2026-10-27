@@ -173,7 +173,7 @@ More coming soon.
 
 One owner, one AI assistant, and a written agreement:
 the owner decides, the assistant advises and drafts, and nothing is built
-until it is written down and approved. Every decision, D-001 through D-125,
+until it is written down and approved. Every decision, D-001 through D-126,
 is logged in [DECISIONS.md](DECISIONS.md) with its why, its alternatives and
 who decided. Open questions stay visible until answered. The agreement itself
 is [AGREEMENT.md](AGREEMENT.md). The repository lives at
