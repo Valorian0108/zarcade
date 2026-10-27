@@ -29,8 +29,11 @@ export interface GameEntry {
   teaches?: string;
   /** The room (D-078): the objects on screen. Never the choices or answers. */
   sees?: string;
-  /** Who stands on a lit cabinet's screen (D-079): one Watcher, or a crowd. */
-  cast?: "watcher" | "crowd" | "keylock";
+  /**
+   * Who stands on a lit cabinet's screen (D-079): one Watcher, the crowd,
+   * the key and the lock, or the shop window.
+   */
+  cast?: "watcher" | "crowd" | "keylock" | "window";
 }
 
 export const GAMES: GameEntry[] = [
@@ -86,16 +89,16 @@ export const GAMES: GameEntry[] = [
   {
     // Cabinet four, lit after the owner locked the name and approved the hub
     // registration (2026-10-26). Planned since the roadmap as The Auditor's
-    // Key; built and shipped as The Merchant's Window. Same head rule as
-    // cabinet three: the Watcher never heads it, the key and lock are its
-    // own piece.
+    // Key; built and shipped as The Merchant's Window. Its head is the shop
+    // window it is named for (owner's yes 2026-10-27), not the padlock: the
+    // padlock is cabinet three's piece. One gold row, one sealed row, and the
+    // key on the sill.
     id: "merchant",
     name: "The Merchant's Window",
     teach: "Choose how much of your record proves a payment landed.",
     status: "playable",
     href: "/games/merchant",
-    glyph: "auditor",
-    cast: "keylock",
+    cast: "window",
     about:
       "Night has fallen on a small shop. A customer paid a deposit for a custom order, and the supplier will not release the materials until someone sees the money really landed. His auditor stands at your counter with a written ask, and only your key can show the payment. The rows you will read are real testnet payments, pulled live from the chain.",
     teaches:

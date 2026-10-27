@@ -40,20 +40,28 @@ yes-or-no questions about your code. You answer yes or no. The safe checks each
 answer against the code inside it and only says open or shut. If all three
 match, the payment moves. The Watcher never sees the code.
 
+## The Merchant's Window
+
+Status: playable
+
+How it works:
+You run a small shop at night. A customer paid a deposit for a custom order,
+and your supplier will not release the materials until someone sees the money
+really landed. His auditor stands at your counter with a written ask. You hold
+a viewing key for the shop account. It can read what arrived, but it can never
+spend. You choose how much of the record to show him: the whole key, one
+payment proved against the chain, or nothing at all.
+
+The rows you read are real testnet payments, pulled live from the chain.
+
+Full guide: [The Merchant's Window, explained](GUIDE-MERCHANTS-WINDOW.md).
+
 ## The Double-Spend Heist
 
 Status: soon
 
 How it works:
 Catch a cheater spending the same coin twice. This machine is not built yet.
-
-## The Auditor's Key
-
-Status: soon
-
-How it works:
-Give a trusted person a key to look at your payments. Looking is not spending.
-This machine is not built yet.
 
 ## The Vault Run
 

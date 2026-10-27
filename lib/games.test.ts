@@ -76,13 +76,12 @@ describe("the hub list", () => {
   });
 
   it("lights cabinet four as The Merchant's Window with its own head image", () => {
-    // Owner's approval 2026-10-26: the name is locked and the hub
-    // registration is a yes. Same rule as cabinet three: the Watcher never
-    // heads this cabinet. The key and the lock are its own piece.
+    // Owner's approval 2026-10-27: the shop window is cabinet four's head,
+    // not the key and the lock. That padlock is cabinet three's piece.
     const merchant = GAMES.find((g) => g.id === "merchant");
     expect(merchant?.status).toBe("playable");
     expect(merchant?.href).toBe("/games/merchant");
-    expect(merchant?.cast).toBe("keylock");
+    expect(merchant?.cast).toBe("window");
     expect(merchant?.name).toBe("The Merchant's Window");
     const glosses = glossParts(merchant?.teaches ?? "").filter((p) => p.gloss);
     expect(glosses.map((p) => p.text)).toEqual(["viewing key"]);

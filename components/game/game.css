@@ -760,6 +760,58 @@ html[data-motion="less"] .gm-klShackle {
   animation: none;
 }
 
+/* ---------- the merchant's window (cabinet four head image) ----------
+   The owner's yes (2026-10-27): the padlock is cabinet three's piece. Cabinet
+   four's own piece is the shop window it is named for, with one gold receipt
+   row, one sealed row and the viewing key on the sill. The idle loop is the
+   lamp breathing and the row brightening; both still under "less". */
+
+.gm-merchantHead {
+  position: relative;
+  z-index: 1;
+  width: 148px;
+}
+
+.gm-merchantHead svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 26px rgba(8, 6, 12, 0.6));
+}
+
+.gm-mwLamp {
+  opacity: 0.85;
+  animation: gmMwBreathe 7s ease-in-out infinite alternate;
+}
+
+.gm-mwRow {
+  opacity: 0.75;
+  animation: gmMwRow 5s ease-in-out infinite alternate;
+}
+
+@keyframes gmMwBreathe {
+  from {
+    opacity: 0.68;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gmMwRow {
+  from {
+    opacity: 0.58;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+html[data-motion="less"] .gm-mwLamp,
+html[data-motion="less"] .gm-mwRow {
+  animation: none;
+}
+
 /* ---------- the public record rows ---------- */
 
 .gm-rows {

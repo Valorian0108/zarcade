@@ -152,19 +152,17 @@ Playable now:
 - Unseen
 - The Crowd
 - The Proof Puzzle
+- The Merchant's Window
 
-Coming soon:
-- The Double-Spend Heist
-- The Auditor's Key
-- The Vault Run
+More coming soon.
 
 ## Limits
 
 - Testnet only. No real money, ever.
-- Three machines are live: Unseen, The Crowd and The Proof Puzzle. The floor
-  shows only those. The other cabinets are logged in
-  [DECISIONS.md](DECISIONS.md) and [ROADMAP.md](ROADMAP.md) as features to
-  add.
+- Four machines are live: Unseen, The Crowd, The Proof Puzzle and The
+  Merchant's Window. The floor shows only those. The other planned cabinets
+  are logged in [DECISIONS.md](DECISIONS.md) and [ROADMAP.md](ROADMAP.md) as
+  features to add.
 - One confirmation cannot be skipped, so round pacing depends on the chain.
 - The first sync is slow and the pot split is slower. Both are stated costs,
   not surprises.
@@ -175,7 +173,7 @@ Coming soon:
 
 One owner, one AI assistant, and a written agreement:
 the owner decides, the assistant advises and drafts, and nothing is built
-until it is written down and approved. Every decision, D-001 through D-107,
+until it is written down and approved. Every decision, D-001 through D-125,
 is logged in [DECISIONS.md](DECISIONS.md) with its why, its alternatives and
 who decided. Open questions stay visible until answered. The agreement itself
 is [AGREEMENT.md](AGREEMENT.md). The repository lives at
