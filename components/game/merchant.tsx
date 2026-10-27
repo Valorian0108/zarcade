@@ -471,6 +471,13 @@ export function Merchant() {
           ? "hand"
           : "wood";
   const turned = beat === "preview" && litCount > 0;
+  const speech = speechFor(beat, {
+    rowsOpen,
+    tried,
+    choice,
+    receiptCount: count,
+    depositBlock: deposit?.block ?? null,
+  });
 
   // What the supplier can see through the window, set by the choice.
   const windowMode: "dark" | "one" | "all" =
@@ -783,13 +790,13 @@ export function Merchant() {
         <div className={styles.band} aria-live="polite">
           <div className={styles.speech}>
             <p className={styles.speaker}>{SPEAKER}</p>
-            {speechFor(beat, { rowsOpen, tried, choice }).lines.map((line) => (
+            {speech.lines.map((line) => (
               <p className={styles.line} key={line}>
                 {line}
               </p>
             ))}
-            {speechFor(beat, { rowsOpen, tried, choice }).teach ? (
-              <p className={styles.teachLine}>{speechFor(beat, { rowsOpen, tried, choice }).teach}</p>
+            {speech.teach ? (
+              <p className={styles.teachLine}>{speech.teach}</p>
             ) : null}
           </div>
 
@@ -800,10 +807,10 @@ export function Merchant() {
               <button
                 type="button"
                 className={styles.btn}
-                disabled={speechFor(beat, { rowsOpen, tried, choice }).waiting}
+                disabled={speech.waiting}
                 onClick={advance}
               >
-                {speechFor(beat, { rowsOpen, tried, choice }).button}
+                {speech.button}
               </button>
             )}
           </div>
@@ -826,7 +833,15 @@ type Speech = {
 
 function speechFor(
   beat: Beat,
-  state: { rowsOpen: boolean; tried: boolean; choice: Choice | null },
+  state: {
+    rowsOpen: boolean;
+    tried: boolean;
+    choice: Choice | null;
+    /** How many rows the live window holds, so the auditor never invents a second. */
+    receiptCount: number;
+    /** The live deposit's block, so the line and the board cannot disagree. */
+    depositBlock: number | null;
+  },
 ): Speech {
   switch (beat) {
     case "request":
@@ -844,7 +859,13 @@ function speechFor(
       return state.rowsOpen
         ? {
             lines: [
-              `There it is. One payment of one thousand zatoshis, reference ${DEPOSIT_MEMO}, at block 4543955. Another sits beside it. Both came into this one account.`,
+              `There it is. One payment of one thousand zatoshis, reference ${DEPOSIT_MEMO}${
+                state.depositBlock !== null ? `, at block ${state.depositBlock}` : ""
+              }. ${
+                state.receiptCount > 1
+                  ? "Another sits beside it. Both came into this one account."
+                  : "It came into this one account."
+              }`,
             ],
             teach: "This is what the incoming viewing key shows: every payment that arrived, the amount, your address, the time, the block, and any message. It never shows who paid.",
             button: "Try the till",
