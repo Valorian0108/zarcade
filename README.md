@@ -2,7 +2,7 @@
 
 Zarcade is an arcade that teaches Zcash privacy. Every machine is a small game
 built on real practice money on the Zcash test network and a real public
-record. Built for the Zecathon, Track 05 Wildcard.
+record. Was Built for Zecathon, Track 05 Wildcard.
 
 ## The arcade
 
