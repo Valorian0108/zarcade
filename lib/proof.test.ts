@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ANSWER_LOCK_MS,
   PROOF_RECORD_LABEL,
   proofRecord,
   safeReply,
+  shouldAcceptAnswer,
   type ProofQuestion,
 } from "./proof";
 
@@ -70,5 +72,25 @@ describe("the running record of the safe", () => {
 describe("the panel name", () => {
   it("calls the record The Safe, so the reader knows who speaks", () => {
     expect(PROOF_RECORD_LABEL).toBe("The Safe");
+  });
+});
+
+describe("one answer per press", () => {
+  it("accepts the first press", () => {
+    expect(shouldAcceptAnswer(1, 1_000, 0)).toBe(true);
+  });
+
+  it("rejects the second click of a double click, however late it arrives", () => {
+    // detail 2 is the browser saying this is the second click.
+    expect(shouldAcceptAnswer(2, 9_999, 0)).toBe(false);
+    expect(shouldAcceptAnswer(3, 9_999, 0)).toBe(false);
+  });
+
+  it("rejects a rapid second press inside the lock window", () => {
+    expect(shouldAcceptAnswer(1, 1_000 + ANSWER_LOCK_MS - 1, 1_000)).toBe(false);
+  });
+
+  it("accepts a deliberate press after the lock window", () => {
+    expect(shouldAcceptAnswer(1, 1_000 + ANSWER_LOCK_MS, 1_000)).toBe(true);
   });
 });

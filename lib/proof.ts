@@ -23,6 +23,25 @@ export interface ProofQuestion {
 /** The only two words the safe ever says. */
 export type SafeReply = "open" | "shut";
 
+/**
+ * The answer buttons sit in one place for every question. Without a guard, the
+ * second click of a double click lands on the next question and answers it
+ * before anyone reads it (owner report 2026-11-02). One answer per press, and
+ * none inside this window.
+ */
+export const ANSWER_LOCK_MS = 400;
+
+/** Whether a press is a fresh answer or the echo of the one before it.
+ *  `clickCount` is the DOM event's detail: 2 or more is a double click. */
+export function shouldAcceptAnswer(
+  clickCount: number,
+  now: number,
+  lastAnswerAt: number,
+): boolean {
+  if (clickCount > 1) return false;
+  return now - lastAnswerAt >= ANSWER_LOCK_MS;
+}
+
 /** The name of the panel that carries the safe's answers (D-108). Elsewhere
  *  the panel is the running record; here it is the safe, because here the
  *  safe is the one speaking. */

@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { GameFrame } from "@/components/game/frame";
 import type { WatcherMood } from "@/components/watcher";
-import { PROOF_RECORD_LABEL, proofRecord, type ProofQuestion } from "@/lib/proof";
+import {
+  PROOF_RECORD_LABEL,
+  proofRecord,
+  shouldAcceptAnswer,
+  type ProofQuestion,
+} from "@/lib/proof";
 
 /**
  * The Proof Puzzle (cabinet three), restaged after the owner's playtest
@@ -93,6 +98,7 @@ export function Proof() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [pay, setPay] = useState<PayState>({ kind: "none" });
   const payStarted = useRef(false);
+  const lastAnswerAt = useRef(0);
 
   /**
    * Every keystroke lands in the box, so typing always works. The round
@@ -103,6 +109,7 @@ export function Proof() {
     setCode(cleaned);
     if (cleaned.length === 3) {
       const digits = cleaned.split("").map((c) => parseInt(c, 10));
+      lastAnswerAt.current = 0;
       setQuestions(pickQuestions(digits));
       setAnswers([]);
       setFeedback(null);
@@ -110,8 +117,17 @@ export function Proof() {
     }
   }
 
-  function answer(ans: boolean) {
+  /**
+   * One answer per press. The buttons share one position, so a double click
+   * or a held Enter would otherwise answer the next question before it is
+   * read. The pressed button is blurred so Enter cannot repeat the press.
+   */
+  function answer(ans: boolean, event: MouseEvent<HTMLButtonElement>) {
     if (!questions) return;
+    const now = Date.now();
+    if (!shouldAcceptAnswer(event.detail, now, lastAnswerAt.current)) return;
+    lastAnswerAt.current = now;
+    event.currentTarget.blur();
     const next = [...answers, ans];
     setAnswers(next);
     const asked = questions[next.length - 1];
@@ -130,6 +146,7 @@ export function Proof() {
     setAnswers([]);
     setFeedback(null);
     payStarted.current = false;
+    lastAnswerAt.current = 0;
     setPay({ kind: "none" });
   }
 
@@ -252,10 +269,10 @@ export function Proof() {
             className="gm-actions"
             style={{ margin: 0, padding: 0, marginTop: "auto", paddingTop: 22 }}
           >
-            <button type="button" className="gm-btnPrimary" onClick={() => answer(true)}>
+            <button type="button" className="gm-btnPrimary" onClick={(e) => answer(true, e)}>
               Yes
             </button>
-            <button type="button" className="gm-btnGhost" onClick={() => answer(false)}>
+            <button type="button" className="gm-btnGhost" onClick={(e) => answer(false, e)}>
               No
             </button>
             {feedback && <p className="gm-callSub gm-msgIn">{feedback}</p>}
