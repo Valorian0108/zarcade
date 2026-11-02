@@ -904,7 +904,7 @@ function speechFor(
       return consequenceSpeech(state.choice);
     case "balance":
       return {
-        lines: ["One last thing before I go. How much is left in this account now? All of it."],
+        lines: ["One last thing before I go. How much is left in this account now?"],
         button: "Finish",
         waiting: false,
       };
