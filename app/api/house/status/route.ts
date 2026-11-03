@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 
 import { FEE_HEADROOM_ZATOSHIS, ROUND_ZATOSHIS } from "@/lib/zcash/config";
+import { globalBusyResponse, globalReadBrake, recordGlobalRead } from "@/lib/zcash/poll-guard";
 import {
   readAddresses,
   readBalance,
@@ -27,6 +28,14 @@ export async function GET() {
   // time, so this must not be answered from a build-time guess. Under Cache
   // Components the way to say that is to wait for a real request.
   await connection();
+
+  // The whole-arcade brake (D-138). Even the cheap health check below queues
+  // for the wallet's lock before it gives up on it, so this route counts as a
+  // read like any other.
+  const nowMs = Date.now();
+  const globalWait = globalReadBrake(nowMs);
+  if (globalWait !== null) return globalBusyResponse(globalWait);
+  recordGlobalRead(nowMs);
 
   // Ask the cheap question first. During a refill the wallet mutex is held for
   // minutes, so `readBalance` below would block until its timeout and this route

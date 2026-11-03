@@ -84,6 +84,11 @@ export function Unseen() {
     let alive = true;
     fetch("/api/house/status")
       .then(async (response) => {
+        // Only a 200 carries the wallet's answer. A braked read (429, D-138) or
+        // any other refusal has no `readyForRound` in it, and reading it as
+        // false would tell the player the wallet has no coin when the truth is
+        // the arcade is busy. Say nothing instead, exactly like a network blip.
+        if (!response.ok) return;
         const body = (await response.json()) as Record<string, unknown>;
         if (!alive) return;
         setHouse({ refilling: body.refilling === true, ready: body.readyForRound === true });

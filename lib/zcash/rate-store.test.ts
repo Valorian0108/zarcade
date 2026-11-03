@@ -124,12 +124,33 @@ describe("the counters", () => {
 });
 
 describe("who is asking", () => {
-  it("takes the first address a proxy forwarded", () => {
+  it("takes the last address in the forwarded chain, the hop the platform added (D-138)", () => {
     const request = new Request("http://localhost/api/game/unseen/send", {
       method: "POST",
       headers: { "x-forwarded-for": "203.0.113.7, 70.41.3.18" },
     });
-    expect(visitorKey(request)).toBe("203.0.113.7");
+    expect(visitorKey(request)).toBe("70.41.3.18");
+  });
+
+  it("cannot be talked into a chosen bucket by invented hops in front", () => {
+    // Every proxy appends, so whatever a caller writes sits before the one
+    // address the platform itself added. Two callers who invent different
+    // chains but arrive through the same proxy still share one bucket.
+    const one = new Request("http://localhost/x", {
+      headers: { "x-forwarded-for": "1.2.3.4, 70.41.3.18" },
+    });
+    const two = new Request("http://localhost/x", {
+      headers: { "x-forwarded-for": "5.6.7.8, 9.9.9.9, 70.41.3.18" },
+    });
+    expect(visitorKey(one)).toBe("70.41.3.18");
+    expect(visitorKey(two)).toBe(visitorKey(one));
+  });
+
+  it("skips empty hops at the end of the chain", () => {
+    const trailing = new Request("http://localhost/x", {
+      headers: { "x-forwarded-for": "203.0.113.7,  " },
+    });
+    expect(visitorKey(trailing)).toBe("203.0.113.7");
   });
 
   it("falls back to the real-ip header, then to one shared local bucket", () => {

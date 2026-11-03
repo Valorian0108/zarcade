@@ -1,8 +1,11 @@
 import { connection } from "next/server";
 
 import {
+  globalBusyResponse,
+  globalReadBrake,
   mayPoll,
   pollSnapshotFor,
+  recordGlobalRead,
   recordPoll,
   secondsUntilNextPoll,
 } from "@/lib/zcash/poll-guard";
@@ -52,6 +55,13 @@ export async function GET(request: Request) {
       { status: 429, headers: { "retry-after": String(wait) } },
     );
   }
+
+  // The whole-arcade brake (D-138). It answers in the same shape as the
+  // refusal above, so the machine keeps waiting quietly instead of telling the
+  // player something broke.
+  const globalWait = globalReadBrake(nowMs);
+  if (globalWait !== null) return globalBusyResponse(globalWait);
+  recordGlobalRead(nowMs);
 
   try {
     const progress = await readPaymentProgress(txid);

@@ -94,17 +94,29 @@ export function refundRoundKeepingPause(visitorKey: string, nowMs: number): void
  * for a local demo. Behind a platform that sets the forwarded header, each
  * visitor gets their own bucket.
  *
- * Known weakness, stated plainly: those headers are only trustworthy if a proxy
- * sets them. A caller who invents one gets a fresh per-visitor bucket. The two
- * limits that protect the money itself, the global pause and the daily cap,
- * cannot be dodged that way, so the worst case is one visitor taking more than
- * their share of an hour, not the pot being drained.
+ * Which end of the list is read matters (D-138). A forwarded header is a chain:
+ * each proxy appends the address it was reached from, so the first entry is
+ * whatever the caller wrote and the last is the one the platform added. Reading
+ * the first let a caller invent a fresh bucket per request by sending the
+ * header themselves. Reading the last means the key comes from the one hop we
+ * pay for and trust, and a caller cannot write past it.
+ *
+ * Known weakness, stated plainly: this still assumes exactly one honest proxy in
+ * front, which is what the arcade runs on. A caller who reaches the app without
+ * one gets to pick their own bucket. The limits that protect the money itself,
+ * the global pause and the daily cap, cannot be dodged that way, and the read
+ * brake in poll-guard.ts does not use this key at all, so the worst case is one
+ * visitor taking more than their share of an hour, not the pot being drained or
+ * the wallet being flooded.
  */
 export function visitorKey(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    const first = forwarded.split(",")[0];
-    if (first && first.trim() !== "") return first.trim();
+    const hops = forwarded.split(",");
+    for (let i = hops.length - 1; i >= 0; i -= 1) {
+      const hop = hops[i].trim();
+      if (hop !== "") return hop;
+    }
   }
   const real = request.headers.get("x-real-ip");
   if (real && real.trim() !== "") return real.trim();

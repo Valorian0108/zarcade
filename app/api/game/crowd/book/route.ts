@@ -1,6 +1,7 @@
 import { connection, NextResponse } from "next/server";
 
 import { buildBook, CROWD_RECORDS } from "@/lib/crowd";
+import { globalReadBrake, recordGlobalRead } from "@/lib/zcash/poll-guard";
 import { readSendHistory } from "@/lib/zcash/sidecar";
 
 /**
@@ -18,6 +19,17 @@ export async function GET() {
   // request, never from a build-time guess (the same rule the house status
   // route follows under Cache Components).
   await connection();
+
+  // The whole-arcade brake (D-138). This route has an honest fallback, so a
+  // braked read answers with the curated book instead of refusing: those rows
+  // are real transactions too, and the game must never break over a wallet
+  // that is busy.
+  const nowMs = Date.now();
+  if (globalReadBrake(nowMs) !== null) {
+    return NextResponse.json({ ok: true, book: CROWD_RECORDS });
+  }
+  recordGlobalRead(nowMs);
+
   try {
     const book = buildBook(await readSendHistory(8));
     return NextResponse.json({ ok: true, book });

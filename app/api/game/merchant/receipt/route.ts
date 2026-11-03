@@ -3,8 +3,11 @@ import { connection } from "next/server";
 import type { Proof } from "@/lib/merchant";
 import { proofHolds } from "@/lib/merchant";
 import {
+  globalBusyResponse,
+  globalReadBrake,
   mayPoll,
   pollSnapshotFor,
+  recordGlobalRead,
   recordPoll,
   secondsUntilNextPoll,
 } from "@/lib/zcash/poll-guard";
@@ -65,6 +68,12 @@ export async function GET(request: Request) {
       { status: 429, headers: { "retry-after": String(wait) } },
     );
   }
+
+  // The whole-arcade brake (D-138). This is the heaviest read of the lot: one
+  // fetch and one decryption per receipt, all behind the wallet's single lock.
+  const globalWait = globalReadBrake(nowMs);
+  if (globalWait !== null) return globalBusyResponse(globalWait);
+  recordGlobalRead(nowMs);
 
   try {
     const window = await readMerchantWindow();

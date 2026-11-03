@@ -2,8 +2,11 @@ import { connection } from "next/server";
 
 import type { Receipt } from "@/lib/merchant";
 import {
+  globalBusyResponse,
+  globalReadBrake,
   mayPoll,
   pollSnapshotFor,
+  recordGlobalRead,
   recordPoll,
   secondsUntilNextPoll,
 } from "@/lib/zcash/poll-guard";
@@ -64,6 +67,12 @@ export async function GET(request: Request) {
       { status: 429, headers: { "retry-after": String(wait) } },
     );
   }
+
+  // The whole-arcade brake (D-138). A scan of the merchant's incoming side is
+  // the heaviest read here, so it waits behind the same count as the rest.
+  const globalWait = globalReadBrake(nowMs);
+  if (globalWait !== null) return globalBusyResponse(globalWait);
+  recordGlobalRead(nowMs);
 
   try {
     const window = await readMerchantWindow();
