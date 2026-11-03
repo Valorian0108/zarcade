@@ -273,9 +273,10 @@ off-the-shelf icon.
 - **Voice 2, Space Grotesk (prose):** every sentence that talks to the player.
   Teaching captions, round briefs, status lines, card text, notices. The prose
   keeps the cabinet's techy energy, cut from the same machine as the titles.
-  Picked by the owner on the /sample/type specimen (Direction 2), first as
-  Newsreader (D-047) and then flipped to the grotesk (D-049). Worn at the
-  system's default prose sizes; the serif-era 16px/1.7 tuning was reverted.
+  Picked by the owner on the type specimen (Direction 2, the page deleted by
+  D-133), first as Newsreader (D-047) and then flipped to the grotesk
+  (D-049). Worn at the system's default prose sizes; the serif-era
+  16px/1.7 tuning was reverted.
 - **Mono (Geist Mono):** reserved strictly for on-chain data (addresses,
   amounts on the public list, the transaction id).
 - **Banned:** Geist Sans, the Next.js framework default. It was never chosen,

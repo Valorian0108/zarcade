@@ -143,9 +143,10 @@
     @apply bg-background text-foreground;
   }
   html {
-    /* Prose voice (D-047, flipped to Space Grotesk by D-049): owner pick from
-       /sample/type. Named directly instead of the font-sans utility so no
-       screen can silently fall back to a framework default again. */
+    /* Prose voice (D-047, flipped to Space Grotesk by D-049): the owner's
+       pick from the type specimen, a page deleted by D-133. Named directly
+       instead of the font-sans utility so no screen can silently fall back
+       to a framework default again. */
     font-family: var(--font-prose);
   }
   /* slop-test gate 34: no horizontal scroll on any viewport; `clip` (not
