@@ -62,7 +62,7 @@ export const GAMES: GameEntry[] = [
     glyph: "crowd",
     cast: "crowd",
     about:
-      "You play the stranger. The arcade hands you its whole record book, every payment it ever made, and asks you to read what you can from it. Some rows tell you plenty. Some tell you nothing at all.",
+      "You play the stranger. The arcade hands you three records from its recent history and asks you to read what you can from them. Some rows tell you plenty. Some tell you nothing at all.",
     teaches:
       "Open payments leave a trail of everything they did: the time they landed, the amount, and the address they paid. Shielded payments stay sealed. The blockchain still shows when one landed and how many sealed notes ({{coins}}) it carried, but the amount and the people on both ends stay hidden by default.",
     sees:

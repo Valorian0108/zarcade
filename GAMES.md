@@ -23,9 +23,9 @@ went and how much moved.
 Status: playable
 
 How it works:
-You play the stranger. The arcade hands you its whole record book, every
-payment it ever made, and asks you to read what you can from it. Some rows tell
-you plenty. Some tell you nothing at all.
+You play the stranger. The arcade hands you three records from its recent
+history and asks you to read what you can from them. Some rows tell you plenty.
+Some tell you nothing at all.
 
 Open payments leave a trail: the time they landed, the amount, and the address
 they paid. Shielded payments stay sealed.

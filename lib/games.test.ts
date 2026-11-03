@@ -75,8 +75,14 @@ describe("the hub list", () => {
     expect(glosses.map((p) => p.text)).toEqual(["zero-knowledge proof"]);
   });
 
-  it("lights cabinet four as The Merchant's Window with its own head image", () => {
-    // Owner's approval 2026-10-27: the shop window is cabinet four's head,
+  it("says what The Crowd's book really holds (D-131)", () => {
+    // The machine serves three rows, so the room may not promise the lot.
+    const crowd = GAMES.find((g) => g.id === "crowd");
+    expect(crowd?.about).toMatch(/three records/i);
+    expect(crowd?.about).not.toMatch(/whole record book|every payment it ever made/i);
+  });
+
+  it("lights cabinet four as The Merchant's Window with its own head image", () => {    // Owner's approval 2026-10-27: the shop window is cabinet four's head,
     // not the key and the lock. That padlock is cabinet three's piece.
     const merchant = GAMES.find((g) => g.id === "merchant");
     expect(merchant?.status).toBe("playable");

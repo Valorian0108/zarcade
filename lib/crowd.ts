@@ -296,7 +296,7 @@ export const LEAK_SEALED = 0;
 export const CROWD_COPY = {
   teach: "Every payment the arcade ever made is on the public record. Come and read what a stranger can make of it.",
   setup:
-    "You are the stranger here. This book holds every payment the arcade ever made, and nothing in it is kept from you. Your job is simply to read what you can.",
+    "You are the stranger here. This book holds three records from the arcade's recent history, and nothing in them is kept from you. Your job is simply to read what you can.",
   setupCard:
     "There are three challenges, and each one is a question about this book. Two of them have answers you can find. The third has an answer nobody can find, and understanding why is the whole point of it.",
   c1Brief: "One payment in this book was made in the open. Can you find it?",

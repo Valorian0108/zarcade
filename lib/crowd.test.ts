@@ -277,3 +277,37 @@ describe("the meter and the voice", () => {
     }
   });
 });
+
+describe("what the book says it holds (D-131)", () => {
+  const row = (over: Partial<LiveRow> = {}): LiveRow => ({
+    txid: "a".repeat(64),
+    kind: "shielded",
+    zatoshis: C2_TARGET_ZATOSHIS,
+    block: 4500000,
+    ...over,
+  });
+
+  it("holds three rows whatever the ledger gives it", () => {
+    expect(buildBook([]).length).toBe(3);
+    expect(buildBook([row()]).length).toBe(3);
+    expect(
+      buildBook([
+        row({ txid: "b".repeat(64), kind: "open", block: 4500003 }),
+        row({ txid: "c".repeat(64), block: 4500002 }),
+        row({ txid: "d".repeat(64), block: 4500001 }),
+        row({ txid: "e".repeat(64), block: 4500000 }),
+      ]).length,
+    ).toBe(3);
+  });
+
+  it("names that count in the opening line instead of claiming the lot", () => {
+    expect(CROWD_COPY.setup).toMatch(/three records/i);
+    expect(CROWD_COPY.setup).not.toMatch(/every payment/i);
+  });
+
+  it("never calls the book the arcade's whole history", () => {
+    for (const value of Object.values(CROWD_COPY)) {
+      expect(value).not.toMatch(/whole record book|complete public record|every record the arcade/i);
+    }
+  });
+});

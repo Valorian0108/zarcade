@@ -19,8 +19,8 @@ import {
 } from "@/lib/crowd";
 
 /**
- * The Crowd (D-074): the stranger holds the arcade's complete record book
- * and learns how much of it they can read. Three challenges inside the
+ * The Crowd (D-074): the stranger holds three records from the arcade's
+ * recent history and learns how much of them they can read. Three challenges inside the
  * shared frame (A5): find the open row, fail to point at a sealed amount,
  * then say why the open row is open at all.
  *
@@ -468,7 +468,7 @@ export function Crowd() {
       chip: ["Challenge 1 of 3", "Find the open payment"],
       panelLabel: "The book",
       caption: CROWD_COPY.c1Brief,
-      description: "You hold every record the arcade ever made. Nothing is kept from you.",
+      description: "You hold three records from the arcade's recent history. Nothing in them is kept from you.",
       leak: LEAK_SEALED,
       leakLabel: "Nothing pinned down yet.",
     },
