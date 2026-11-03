@@ -50,7 +50,7 @@ Exactly one route can move money, and both paying machines share it:
 ignored. Three guards run before the wallet is touched: a global pause, a
 per-visitor hourly share, and a daily ceiling for the whole arcade.
 
-119 tests pin the money rules down. I ran the suite myself before committing
+The test suite pins the money rules down. I ran it myself before committing
 this file.
 
 Everything else - fees, build time, confirmation wait - is best read off a real receipt. Play any round and check the txid link yourself; the machine never shows a number it didn't move on chain.
@@ -173,7 +173,7 @@ More coming soon.
 
 One owner, one AI assistant, and a written agreement:
 the owner decides, the assistant advises and drafts, and nothing is built
-until it is written down and approved. Every decision, D-001 through D-130,
+until it is written down and approved. Every decision, D-001 through D-139,
 is logged in [DECISIONS.md](DECISIONS.md) with its why, its alternatives and
 who decided. Open questions stay visible until answered. The agreement itself
 is [AGREEMENT.md](AGREEMENT.md). The repository lives at
