@@ -7,7 +7,7 @@ import "./merchant.css";
 export const metadata: Metadata = {
   title: "The Merchant's Window",
   description:
-    "You are the shopkeeper. A deposit has landed and your partner wants proof. Decide how much of your private record to show, and see what each choice leaves open.",
+    "You are the shopkeeper. A deposit has landed and your supplier wants proof. Decide how much of your private record to show, and see what each choice leaves open.",
 };
 
 export default function MerchantPage() {
