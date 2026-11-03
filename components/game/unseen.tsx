@@ -417,6 +417,11 @@ function Intro({ house, onStart }: { house: House; onStart: () => void }) {
           building. You never need a wallet, a seed, or a key of your own.
         </p>
         <p className="gm-goalText" style={{ marginTop: 10 }}>
+          All money here is TAZ, the test network&apos;s version of Zcash. One TAZ is 100,000,000
+          zatoshis, the smallest unit. A payment in this arcade moves 1,000 zatoshis, or 0.00001
+          TAZ.
+        </p>
+        <p className="gm-goalText" style={{ marginTop: 10 }}>
           When you hide a payment it goes into {POOL_FIRST_MENTION}. A pool is just a group of
           payments that all look the same from outside, and that is what makes any one of them hard
           to single out.
