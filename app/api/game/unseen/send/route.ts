@@ -9,7 +9,7 @@ import {
   ROUND_ZATOSHIS,
 } from "@/lib/zcash/config";
 import { formatTaz } from "@/lib/zcash/format";
-import { decideSend, parseRoundRequest, type Branch } from "@/lib/zcash/guardrails";
+import { decideSend, parseRoundRequest, checkSender, type Branch } from "@/lib/zcash/guardrails";
 import {
   recordSend,
   refundRoundKeepingPause,
@@ -35,10 +35,28 @@ import {
  *
  * The payment is real: it is signed by the house wallet, broadcast to the
  * Zcash testnet, and mined into a block. That is why the limits below exist.
+ *
+ * It also asks where the request came from before it reads a word of it
+ * (D-137). A page on somebody else's site can post here from a visitor's
+ * browser, and while no key and no coin of theirs is reachable, the round
+ * would still spend from a budget shared with real players.
  */
 export async function POST(request: Request) {
   // Never answered from a build-time guess: this touches a live wallet.
   await connection();
+
+  // 0. Who is asking? The cheapest refusal comes first, so a request from
+  //    another site is turned away before its body is read and long before the
+  //    wallet is touched.
+  const sender = checkSender({
+    contentType: request.headers.get("content-type"),
+    secFetchSite: request.headers.get("sec-fetch-site"),
+    origin: request.headers.get("origin"),
+    host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+  });
+  if (!sender.ok) {
+    return Response.json({ ok: false, problem: sender.problem }, { status: sender.status });
+  }
 
   // 1. Read the one allowed field. Refuses anything else outright.
   const parsed = parseRoundRequest(await request.text());

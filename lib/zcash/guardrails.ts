@@ -78,6 +78,82 @@ export function parseRoundRequest(raw: string): ParseOutcome {
   return { ok: true, branch: choice };
 }
 
+/** The four headers that say where a round request came from. Read by the route. */
+export type SenderHeaders = {
+  readonly contentType: string | null;
+  readonly secFetchSite: string | null;
+  readonly origin: string | null;
+  readonly host: string | null;
+};
+
+export type SenderCheck =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly status: number; readonly problem: string };
+
+const NOT_FROM_HERE =
+  "That request did not come from this page. Please use the buttons and try again.";
+
+/** The bare host inside an Origin header, or null when it cannot be read. */
+function hostOfOrigin(origin: string): string | null {
+  try {
+    return new URL(origin).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Who may ask for a round (D-137).
+ *
+ * The route takes one word and pays real money, so the question is not only
+ * what a request says but where it came from. A page on somebody else's site
+ * can post here from a visitor's browser. No cookie rides along, so nothing is
+ * stolen, but the round still spends, and the day's budget is shared with real
+ * players.
+ *
+ * Three checks, cheapest first:
+ *
+ *  1. The body must arrive as JSON. Plain text and form posts are the shapes a
+ *     browser will send cross-origin without asking first, and asking first is
+ *     what stops this: the question it asks has no answer here, so the round is
+ *     never sent.
+ *  2. `Sec-Fetch-Site` says who started the request, and no script on a page
+ *     can set it. Only `same-origin`, this page, and `none`, meaning the
+ *     visitor typed the address or used a bookmark, are let through.
+ *     `same-site` is refused on purpose: the arcade lives on a rented domain
+ *     that other people's sites share, so a neighbour's subdomain counts as
+ *     same-site and is still not us.
+ *  3. Where that header is missing, an older browser is assumed and the Origin
+ *     host is compared with the host the request arrived on.
+ *
+ * A request with no Origin at all is let through, because that is what a
+ * person typing the address sends, and also what the operator's own checks
+ * send. This is not a substitute for the wallet's own locks (D-094): those
+ * decide where money may go, and these decide who may ask.
+ */
+export function checkSender(headers: SenderHeaders): SenderCheck {
+  const type = (headers.contentType ?? "").toLowerCase();
+  if (!type.startsWith("application/json")) {
+    return { ok: false, status: 415, problem: UNREADABLE };
+  }
+
+  const site = (headers.secFetchSite ?? "").toLowerCase();
+  if (site.length > 0) {
+    if (site === "same-origin" || site === "none") return { ok: true };
+    return { ok: false, status: 403, problem: NOT_FROM_HERE };
+  }
+
+  const origin = headers.origin ?? "";
+  if (origin.length === 0) return { ok: true };
+
+  const from = hostOfOrigin(origin);
+  const to = (headers.host ?? "").toLowerCase().split(":")[0];
+  if (from === null || to.length === 0 || from !== to) {
+    return { ok: false, status: 403, problem: NOT_FROM_HERE };
+  }
+  return { ok: true };
+}
+
 /** A read-only picture of the counters the store keeps. */
 export type LedgerSnapshot = {
   /** When the last successful send finished, or null if there has not been one. */

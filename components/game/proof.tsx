@@ -188,6 +188,7 @@ export function Proof() {
       try {
         res = await fetch("/api/game/unseen/send", {
           method: "POST",
+          headers: { "content-type": "application/json" },
           body: JSON.stringify({ choice: "hide" }),
         });
       } catch {

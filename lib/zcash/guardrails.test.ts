@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   ALLOWED_BODY_KEYS,
   BRANCHES,
+  checkSender,
   dayKey,
   decideSend,
   isBranch,
   parseRoundRequest,
   type LedgerSnapshot,
   type Limits,
+  type SenderHeaders,
 } from "@/lib/zcash/guardrails";
 
 /**
@@ -167,5 +169,91 @@ describe("when a round may move money", () => {
   it("names the day the way the counter expects", () => {
     expect(dayKey(NOW)).toBe("2026-10-11");
     expect(dayKey(NOW + 12 * HOUR)).toBe("2026-10-12");
+  });
+});
+
+describe("who may ask for a round (D-137)", () => {
+  const HOST = "web-production-22d97.up.railway.app";
+  const HERE = `https://${HOST}`;
+
+  const headers = (over: Partial<SenderHeaders> = {}): SenderHeaders => ({
+    contentType: "application/json",
+    secFetchSite: "same-origin",
+    origin: HERE,
+    host: HOST,
+    ...over,
+  });
+
+  it("lets this page ask, with or without a charset on the type", () => {
+    expect(checkSender(headers()).ok).toBe(true);
+    expect(checkSender(headers({ contentType: "application/json; charset=utf-8" })).ok).toBe(true);
+  });
+
+  it("lets a visitor who typed the address ask", () => {
+    expect(checkSender(headers({ secFetchSite: "none", origin: null })).ok).toBe(true);
+  });
+
+  it("refuses a body that is not JSON before it reads a word of it", () => {
+    // This is the shape a cross-origin form or text post arrives in, and the
+    // only shape a browser sends without asking permission first.
+    const plain = checkSender(
+      headers({ contentType: "text/plain;charset=UTF-8", secFetchSite: "cross-site" }),
+    );
+    expect(plain.ok).toBe(false);
+    if (!plain.ok) expect(plain.status).toBe(415);
+  });
+
+  it("refuses a request another site started", () => {
+    const out = checkSender(
+      headers({ secFetchSite: "cross-site", origin: "https://someone-else.example" }),
+    );
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.status).toBe(403);
+  });
+
+  it("refuses a neighbour on the same rented domain", () => {
+    // Same-site is not us. The arcade lives on a domain other tenants share.
+    expect(
+      checkSender(
+        headers({ secFetchSite: "same-site", origin: "https://other-tenant.up.railway.app" }),
+      ).ok,
+    ).toBe(false);
+  });
+
+  it("falls back to the host when the browser sends no Sec-Fetch-Site", () => {
+    expect(checkSender(headers({ secFetchSite: null })).ok).toBe(true);
+    expect(
+      checkSender(headers({ secFetchSite: null, origin: "https://someone-else.example" })).ok,
+    ).toBe(false);
+  });
+
+  it("compares hosts without the port getting in the way", () => {
+    expect(
+      checkSender(
+        headers({
+          secFetchSite: null,
+          origin: "http://localhost:3000",
+          host: "localhost:3000",
+        }),
+      ).ok,
+    ).toBe(true);
+  });
+
+  it("refuses an Origin it cannot read rather than trusting it", () => {
+    expect(checkSender(headers({ secFetchSite: null, origin: "not a url" })).ok).toBe(false);
+  });
+
+  it("lets a request with no Origin through, which is what a person and an operator both send", () => {
+    expect(checkSender(headers({ secFetchSite: null, origin: null })).ok).toBe(true);
+  });
+
+  it("says something a player can act on when it refuses, in the house voice", () => {
+    const out = checkSender(headers({ secFetchSite: "cross-site" }));
+    expect(out.ok).toBe(false);
+    if (!out.ok) {
+      expect(out.problem.length).toBeGreaterThan(0);
+      expect(out.problem).toMatch(/buttons/);
+      expect(out.problem).not.toMatch(/[—–]/);
+    }
   });
 });
