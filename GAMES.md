@@ -1,7 +1,8 @@
 # Games available in Zarcade
 
-This file describes how each machine works. Playable machines are live on the
-arcade floor. Soon machines are planned but not built yet.
+This file describes how each machine works. Every machine listed here is
+playable and live on the arcade floor. Ideas for machines that are not built
+are kept in `SCOPE.md` and `ROADMAP.md`, not here (D-136).
 
 ## Unseen
 
@@ -55,18 +56,3 @@ payment proved against the chain, or nothing at all.
 The rows you read are real testnet payments, pulled live from the chain.
 
 Full guide: [The Merchant's Window, explained](GUIDE-MERCHANTS-WINDOW.md).
-
-## The Double-Spend Heist
-
-Status: soon
-
-How it works:
-Catch a cheater spending the same coin twice. This machine is not built yet.
-
-## The Vault Run
-
-Status: soon
-
-How it works:
-Move coins between the public side and the private side without leaving a
-trail. This machine is not built yet.
